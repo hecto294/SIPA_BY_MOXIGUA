@@ -26,7 +26,12 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://sipa_user:sipa_password@db:5432/sipa_db
+      DATABASE_URL: postgresql+psycopg2://sipa_user:sipa_password@db:5432/sipa_db?options=-c%20search_path=etapa_productiva
+      SECRET_KEY: "sipa-moxigua-secret-key-desarrollo-2024-minimo-32-chars"
+      CORS_ORIGINS: "*"
+      FRONTEND_URL: "http://localhost:3000"
+      ENVIRONMENT: "development"
+      DEBUG: "true"
     volumes:
       - ./backend/evidencias:/app/evidencias
       - ./backend/uploads:/app/uploads
