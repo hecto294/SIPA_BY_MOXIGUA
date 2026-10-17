@@ -1,4 +1,4 @@
-/* src/pages/admin/GestionUsuarios.css */
+/* src/modules/admin/pages/GestionUsuarios.css */
 
 /* ========================================================== */
 /* CONTENEDOR PRINCIPAL */
@@ -97,7 +97,7 @@
 }
 
 /* ========================================================== */
-/* BOTÓN CARGA MASIVA - VERDE */
+/* BOTÓN CARGA MASIVA */
 /* ========================================================== */
 .btn-carga-masiva {
   background: #3ca203;
@@ -125,7 +125,7 @@
 }
 
 /* ========================================================== */
-/* BOTÓN NUEVO USUARIO - VERDE (mismo color que el otro) */
+/* BOTÓN NUEVO USUARIO */
 /* ========================================================== */
 .btn-nuevo-usuario {
   background: #3ca203;
@@ -273,25 +273,10 @@
   display: inline-block;
 }
 
-.rol-badge.aprendiz {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-.rol-badge.instructor {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.rol-badge.coordinador {
-  background: #fef3c7;
-  color: #d97706;
-}
-
-.rol-badge.administrador {
-  background: #ede9fe;
-  color: #7c3aed;
-}
+.rol-badge.aprendiz { background: #dbeafe; color: #1d4ed8; }
+.rol-badge.instructor { background: #d1fae5; color: #065f46; }
+.rol-badge.coordinador { background: #fef3c7; color: #d97706; }
+.rol-badge.administrador { background: #ede9fe; color: #7c3aed; }
 
 .estado-badge {
   padding: 4px 12px;
@@ -330,37 +315,103 @@
 /* RESPONSIVE */
 /* ========================================================== */
 @media (max-width: 768px) {
-  .usuarios-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .header-buttons {
-    flex-direction: column;
-  }
-
-  .btn-carga-masiva,
-  .btn-nuevo-usuario {
-    justify-content: center;
-    width: 100%;
-  }
+  .usuarios-header { flex-direction: column; align-items: stretch; }
+  .header-buttons { flex-direction: column; }
+  .btn-carga-masiva, .btn-nuevo-usuario { justify-content: center; width: 100%; }
 }
 
 @media (max-width: 600px) {
-  .search-container {
-    flex-wrap: wrap;
-  }
+  .search-container { flex-wrap: wrap; }
+  .search-input { min-width: 100%; }
+  .usuarios-table { font-size: 12px; }
+  .usuarios-table th, .usuarios-table td { padding: 8px 10px; }
+}
 
-  .search-input {
-    min-width: 100%;
-  }
+/* ========================================================== */
+/* ESTILOS DEFINITIVOS PARA SWEETALERT2 (SIN SCROLL)          */
+/* ========================================================== */
 
-  .usuarios-table {
-    font-size: 12px;
-  }
+/* 1. Atacar el contenedor externo (el que inyecta SweetAlert con JS) */
+.swal2-container {
+  overflow: hidden !important;
+  padding-right: 0 !important;
+}
 
-  .usuarios-table th,
-  .usuarios-table td {
-    padding: 8px 10px;
-  }
+/* 2. Ocultar el icono azul de forma definitiva */
+.swal2-icon {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 3. Ventana emergente: sin scroll y sin max-height */
+.swal2-popup {
+  padding: 20px !important;
+  overflow: hidden !important;
+  max-height: none !important;
+  height: auto !important;
+}
+
+/* 4. Contenedor del formulario: sin scroll */
+.swal2-html-container {
+  overflow: hidden !important;
+  max-height: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* 5. EL TRUCO MAESTRO: Grid de 2 columnas para reducir altura */
+.swal-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  text-align: left;
+}
+
+.swal-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.swal-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 3px;
+}
+
+.swal-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  box-sizing: border-box;
+  outline: none;
+  height: 32px;
+}
+
+.swal-input:focus {
+  border-color: #3ca203;
+}
+
+/* 6. Botones */
+.swal2-actions {
+  margin-top: 15px !important;
+  gap: 10px !important;
+}
+
+.swal2-styled {
+  padding: 8px 16px !important;
+  font-size: 13px !important;
+  border-radius: 6px !important;
+}
+
+/* 7. Bloqueo total del scroll del body/html */
+html.swal2-shown,
+body.swal2-shown {
+  overflow: hidden !important;
+  height: auto !important;
 }

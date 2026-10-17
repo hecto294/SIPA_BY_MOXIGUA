@@ -9,7 +9,6 @@ import './GestionUsuarios.css';
 const GestionUsuarios = () => {
   const navigate = useNavigate();
 
-  // Estados
   const [usuarios, setUsuarios] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,7 +17,6 @@ const GestionUsuarios = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [modalCargaMasiva, setModalCargaMasiva] = useState(false);
 
-  // Cargar usuarios y roles al montar
   useEffect(() => {
     cargarDatos();
   }, []);
@@ -30,18 +28,19 @@ const GestionUsuarios = () => {
 
       const [usuariosData, rolesData] = await Promise.all([
         userService.getUsers(),
-        userService.getUsersByRole && (async () => {
-          try {
-            const res = await fetch('http://localhost:8000/usuarios/roles', {
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-              },
-            });
-            return await res.json();
-          } catch (e) {
-            return [];
-          }
-        })(),
+        userService.getUsersByRole &&
+          (async () => {
+            try {
+              const res = await fetch('http://localhost:8000/usuarios/roles', {
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem('token')}`,
+                },
+              });
+              return await res.json();
+            } catch (e) {
+              return [];
+            }
+          })(),
       ]);
 
       setUsuarios(Array.isArray(usuariosData) ? usuariosData : []);
@@ -54,18 +53,15 @@ const GestionUsuarios = () => {
     }
   };
 
-  // Mapear rol_id → nombre
   const getNombreRol = (rolId) => {
     const rol = roles.find((r) => r.id === rolId);
     return rol ? rol.nombre : 'Sin rol';
   };
 
-  // Nombre completo
   const getNombreCompleto = (usuario) => {
     return `${usuario.nombre || ''} ${usuario.apellido || ''}`.trim() || usuario.email;
   };
 
-  // Color por rol
   const getColorRol = (rolId) => {
     const colores = {
       1: { bg: '#fce7f3', color: '#be185d' },
@@ -78,7 +74,6 @@ const GestionUsuarios = () => {
     return colores[rolId] || { bg: '#f3f4f6', color: '#374151' };
   };
 
-  // Filtrado local
   const filteredUsuarios = usuarios.filter((u) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
@@ -94,20 +89,46 @@ const GestionUsuarios = () => {
     setSearchQuery('');
   };
 
-  // ==========================================================
-  // CARGA MASIVA (abre el componente real)
-  // ==========================================================
   const handleCargaMasiva = () => {
     setModalCargaMasiva(true);
   };
 
   const handleUsuariosCargados = () => {
-    // Recargar la lista después de la carga masiva
     cargarDatos();
   };
 
   // ==========================================================
-  // EDITAR USUARIO
+  // CONFIGURACIÓN GLOBAL DEL MODAL (SIN SCROLL Y SIN ICONO)
+  // ==========================================================
+  const swalFitScreen = {
+    width: '600px', // Más ancho para el grid de 2 columnas
+    icon: undefined, 
+    heightAuto: false, 
+    scrollbarPadding: false,
+    didOpen: (popup) => {
+      // Forzado por JS para quitar scroll residual
+      popup.style.overflow = 'hidden';
+      popup.style.maxHeight = 'none';
+      const htmlContainer = popup.querySelector('.swal2-html-container');
+      if (htmlContainer) {
+        htmlContainer.style.overflow = 'hidden';
+        htmlContainer.style.maxHeight = 'none';
+      }
+      // Eliminar el icono del DOM por si acaso
+      const icon = popup.querySelector('.swal2-icon');
+      if (icon) icon.remove();
+
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    },
+    willClose: () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    },
+  };
+
+  // ==========================================================
+  // EDITAR USUARIO (Usando GRID de 2 columnas)
   // ==========================================================
   const handleEditarUsuario = (usuario) => {
     const rolesOptions = roles
@@ -118,66 +139,43 @@ const GestionUsuarios = () => {
       .join('');
 
     Swal.fire({
+      ...swalFitScreen,
       title: '✏️ Editar Usuario',
       html: `
-        <div style="text-align: left; padding: 5px 0;">
-          <div style="margin: 12px 0;">
-            <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;">
-              Nombre *
-            </label>
-            <input id="edit-nombre" 
-              style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;"
-              value="${usuario.nombre || ''}"
-            />
+        <div class="swal-form-grid">
+          <div class="swal-form-group">
+            <label class="swal-label">Nombre *</label>
+            <input id="edit-nombre" value="${usuario.nombre || ''}" class="swal-input" />
           </div>
-          <div style="margin: 12px 0;">
-            <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;">
-              Apellido *
-            </label>
-            <input id="edit-apellido" 
-              style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;"
-              value="${usuario.apellido || ''}"
-            />
+          <div class="swal-form-group">
+            <label class="swal-label">Apellido *</label>
+            <input id="edit-apellido" value="${usuario.apellido || ''}" class="swal-input" />
           </div>
-          <div style="margin: 12px 0;">
-            <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;">
-              Correo *
-            </label>
-            <input id="edit-email" 
-              style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;"
-              value="${usuario.email || ''}"
-            />
+          <div class="swal-form-group" style="grid-column: 1 / -1;">
+            <label class="swal-label">Correo *</label>
+            <input id="edit-email" value="${usuario.email || ''}" class="swal-input" />
           </div>
-          <div style="margin: 12px 0;">
-            <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;">
-              Rol *
-            </label>
-            <select id="edit-rol" 
-              style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;"
-            >
+          <div class="swal-form-group">
+            <label class="swal-label">Rol *</label>
+            <select id="edit-rol" class="swal-input">
               ${rolesOptions}
             </select>
           </div>
-          <div style="margin: 12px 0;">
-            <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;">
-              Estado *
-            </label>
-            <select id="edit-estado" 
-              style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;"
-            >
+          <div class="swal-form-group">
+            <label class="swal-label">Estado *</label>
+            <select id="edit-estado" class="swal-input">
               <option value="true" ${usuario.is_active ? 'selected' : ''}>Activo</option>
               <option value="false" ${!usuario.is_active ? 'selected' : ''}>Inactivo</option>
             </select>
           </div>
         </div>
       `,
-      icon: 'info',
-      confirmButtonText: '💾 Guardar Cambios',
-      confirmButtonColor: '#3ca203',
+      showConfirmButton: true,
       showCancelButton: true,
+      confirmButtonText: '💾 Guardar',
       cancelButtonText: '❌ Cancelar',
+      confirmButtonColor: '#3ca203',
       cancelButtonColor: '#ef4444',
-      width: '520px',
       preConfirm: () => {
         const nombre = document.getElementById('edit-nombre').value.trim();
         const apellido = document.getElementById('edit-apellido').value.trim();
@@ -193,7 +191,6 @@ const GestionUsuarios = () => {
           Swal.showValidationMessage('⚠️ Correo inválido');
           return false;
         }
-
         return { nombre, apellido, email, rol_id, is_active };
       },
     }).then(async (result) => {
@@ -221,7 +218,7 @@ const GestionUsuarios = () => {
   };
 
   // ==========================================================
-  // NUEVO USUARIO
+  // NUEVO USUARIO (Usando GRID de 2 columnas)
   // ==========================================================
   const handleNuevoUsuario = () => {
     const rolesOptions = roles
@@ -229,64 +226,40 @@ const GestionUsuarios = () => {
       .join('');
 
     Swal.fire({
+      ...swalFitScreen,
       title: '👤 Nuevo Usuario',
       html: `
-        <div style="text-align: left; padding: 5px 0;">
-          <div style="margin: 12px 0;">
-            <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;">
-              Nombre *
-            </label>
-            <input id="new-nombre" 
-              style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;"
-              placeholder="Ej: Juan"
-            />
+        <div class="swal-form-grid">
+          <div class="swal-form-group">
+            <label class="swal-label">Nombre *</label>
+            <input id="new-nombre" placeholder="Ej: Juan" class="swal-input" />
           </div>
-          <div style="margin: 12px 0;">
-            <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;">
-              Apellido *
-            </label>
-            <input id="new-apellido" 
-              style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;"
-              placeholder="Ej: Pérez"
-            />
+          <div class="swal-form-group">
+            <label class="swal-label">Apellido *</label>
+            <input id="new-apellido" placeholder="Ej: Pérez" class="swal-input" />
           </div>
-          <div style="margin: 12px 0;">
-            <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;">
-              Correo *
-            </label>
-            <input id="new-email" type="email"
-              style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;"
-              placeholder="juan.perez@sena.edu.co"
-            />
+          <div class="swal-form-group" style="grid-column: 1 / -1;">
+            <label class="swal-label">Correo *</label>
+            <input id="new-email" type="email" placeholder="juan.perez@sena.edu.co" class="swal-input" />
           </div>
-          <div style="margin: 12px 0;">
-            <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;">
-              Contraseña * (mínimo 6 caracteres)
-            </label>
-            <input id="new-password" type="password"
-              style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;"
-              placeholder="••••••"
-            />
+          <div class="swal-form-group">
+            <label class="swal-label">Contraseña * (mín. 6)</label>
+            <input id="new-password" type="password" placeholder="••••••" class="swal-input" />
           </div>
-          <div style="margin: 12px 0;">
-            <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;">
-              Rol *
-            </label>
-            <select id="new-rol" 
-              style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;"
-            >
+          <div class="swal-form-group">
+            <label class="swal-label">Rol *</label>
+            <select id="new-rol" class="swal-input">
               ${rolesOptions}
             </select>
           </div>
         </div>
       `,
-      icon: 'info',
-      confirmButtonText: '✅ Crear Usuario',
-      confirmButtonColor: '#3ca203',
+      showConfirmButton: true,
       showCancelButton: true,
+      confirmButtonText: '✅ Crear',
       cancelButtonText: '❌ Cancelar',
+      confirmButtonColor: '#3ca203',
       cancelButtonColor: '#ef4444',
-      width: '520px',
       preConfirm: () => {
         const nombre = document.getElementById('new-nombre').value.trim();
         const apellido = document.getElementById('new-apellido').value.trim();
@@ -306,7 +279,6 @@ const GestionUsuarios = () => {
           Swal.showValidationMessage('⚠️ La contraseña debe tener al menos 6 caracteres');
           return false;
         }
-
         return { nombre, apellido, email, password, rol_id };
       },
     }).then(async (result) => {
@@ -358,7 +330,6 @@ const GestionUsuarios = () => {
 
   return (
     <div className="gestion-usuarios-container">
-      {/* MIGA DE PAN */}
       <nav className="breadcrumb">
         <ol>
           <li>
@@ -373,7 +344,6 @@ const GestionUsuarios = () => {
         </ol>
       </nav>
 
-      {/* ENCABEZADO */}
       <div className="usuarios-header">
         <div>
           <h2>Gestión de Usuarios</h2>
@@ -391,7 +361,6 @@ const GestionUsuarios = () => {
         </div>
       </div>
 
-      {/* BUSCADOR */}
       <div className="search-container">
         <input
           type="text"
@@ -409,7 +378,6 @@ const GestionUsuarios = () => {
         </button>
       </div>
 
-      {/* TABLA */}
       <div className="table-wrapper">
         <table className="usuarios-table">
           <thead>
@@ -446,7 +414,6 @@ const GestionUsuarios = () => {
                           borderRadius: '12px',
                           fontSize: '12px',
                           fontWeight: 'bold',
-                          display: 'inline-block',
                         }}
                       >
                         {getNombreRol(usuario.rol_id)}
@@ -482,7 +449,6 @@ const GestionUsuarios = () => {
         </table>
       </div>
 
-      {/* MODAL DE CARGA MASIVA */}
       {modalCargaMasiva && (
         <div
           style={{
