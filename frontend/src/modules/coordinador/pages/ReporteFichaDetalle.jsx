@@ -96,43 +96,58 @@ const ReporteFichaDetalle = () => {
   };
 
   const handleVerDetalle = (aprendiz) => {
+    const badge = (label, estado) => {
+      const color = getEstadoColor(estado);
+      return `<span style="background:${color}18;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;border:1px solid ${color};color:${color};white-space:nowrap;">${label}: ${estado || 'Pendiente'}</span>`;
+    };
+
     Swal.fire({
       title: `📋 ${aprendiz.nombre}`,
       html: `
-        <div style="text-align: left; padding: 10px 0;">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <div><strong>Documento:</strong></div><div>${aprendiz.documento}</div>
-            <div><strong>Email:</strong></div><div>${aprendiz.email}</div>
-            <div><strong>Teléfono:</strong></div><div>${aprendiz.telefono}</div>
-            <div><strong>Empresa:</strong></div><div>${aprendiz.empresa}</div>
-            <div><strong>ARL:</strong></div><div>${aprendiz.arl}</div>
-            <div><strong>Estado:</strong></div><div><span style="color: ${aprendiz.estado === 'ACTIVO' || aprendiz.estado === 'Activo' ? '#10b981' : '#ef4444'}; font-weight: bold;">${getEstadoTexto(aprendiz.estado)}</span></div>
-            <div><strong>Fechas:</strong></div><div>${formatearFecha(aprendiz.fechaInicio)} - ${formatearFecha(aprendiz.fechaFin)}</div>
+        <div style="text-align:left;font-size:13px;line-height:1.35;color:#1f2937;">
+          <div style="display:grid;grid-template-columns:auto 1fr;column-gap:12px;row-gap:4px;align-items:baseline;">
+            <strong style="color:#6b7280;">Documento:</strong><span>${aprendiz.documento || '—'}</span>
+            <strong style="color:#6b7280;">Email:</strong><span style="word-break:break-all;">${aprendiz.email || '—'}</span>
+            <strong style="color:#6b7280;">Teléfono:</strong><span>${aprendiz.telefono || '—'}</span>
+            <strong style="color:#6b7280;">Empresa:</strong><span>${aprendiz.empresa || '—'}</span>
+            <strong style="color:#6b7280;">ARL:</strong><span>${aprendiz.arl || '—'}</span>
+            <strong style="color:#6b7280;">Estado:</strong>
+            <span style="color:${aprendiz.estado === 'ACTIVO' || aprendiz.estado === 'Activo' ? '#10b981' : '#ef4444'};font-weight:700;">
+              ${getEstadoTexto(aprendiz.estado)}
+            </span>
+            <strong style="color:#6b7280;">Fechas:</strong>
+            <span>${formatearFecha(aprendiz.fechaInicio)} – ${formatearFecha(aprendiz.fechaFin)}</span>
           </div>
-          <hr style="border: 1px solid #e5e7eb; margin: 15px 0;" />
-          <div style="margin-bottom: 10px;">
-            <strong>📌 Momentos:</strong>
-            <div style="display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap;">
-              <span style="background: ${getEstadoColor(aprendiz.momentos.momento1)}20; padding: 2px 10px; border-radius: 12px; font-size: 12px; border: 1px solid ${getEstadoColor(aprendiz.momentos.momento1)};">M1: ${aprendiz.momentos.momento1}</span>
-              <span style="background: ${getEstadoColor(aprendiz.momentos.momento2)}20; padding: 2px 10px; border-radius: 12px; font-size: 12px; border: 1px solid ${getEstadoColor(aprendiz.momentos.momento2)};">M2: ${aprendiz.momentos.momento2}</span>
-              <span style="background: ${getEstadoColor(aprendiz.momentos.momento3)}20; padding: 2px 10px; border-radius: 12px; font-size: 12px; border: 1px solid ${getEstadoColor(aprendiz.momentos.momento3)};">M3: ${aprendiz.momentos.momento3}</span>
+
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:10px 0;" />
+
+          <div style="margin-bottom:8px;">
+            <strong style="font-size:12px;color:#374151;">📌 Momentos</strong>
+            <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+              ${badge('M1', aprendiz.momentos?.momento1)}
+              ${badge('M2', aprendiz.momentos?.momento2)}
+              ${badge('M3', aprendiz.momentos?.momento3)}
             </div>
           </div>
+
+          <div style="margin-bottom:8px;">
+            <strong style="font-size:12px;color:#374151;">📖 Bitácoras</strong>
+            <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+              ${badge('B1', aprendiz.bitacoras?.bimestre1)}
+              ${badge('B2', aprendiz.bitacoras?.bimestre2)}
+              ${badge('B3', aprendiz.bitacoras?.bimestre3)}
+            </div>
+          </div>
+
           <div>
-            <strong>📖 Bitácoras:</strong>
-            <div style="display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap;">
-              <span style="background: ${getEstadoColor(aprendiz.bitacoras.bimestre1)}20; padding: 2px 10px; border-radius: 12px; font-size: 12px; border: 1px solid ${getEstadoColor(aprendiz.bitacoras.bimestre1)};">B1: ${aprendiz.bitacoras.bimestre1}</span>
-              <span style="background: ${getEstadoColor(aprendiz.bitacoras.bimestre2)}20; padding: 2px 10px; border-radius: 12px; font-size: 12px; border: 1px solid ${getEstadoColor(aprendiz.bitacoras.bimestre2)};">B2: ${aprendiz.bitacoras.bimestre2}</span>
-              <span style="background: ${getEstadoColor(aprendiz.bitacoras.bimestre3)}20; padding: 2px 10px; border-radius: 12px; font-size: 12px; border: 1px solid ${getEstadoColor(aprendiz.bitacoras.bimestre3)};">B3: ${aprendiz.bitacoras.bimestre3}</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <strong style="font-size:12px;color:#374151;">Avance General</strong>
+              <span style="font-weight:700;font-size:13px;color:${getEstadoColor(aprendiz.avance >= 80 ? 'Completado' : aprendiz.avance >= 50 ? 'En proceso' : 'Pendiente')};">
+                ${aprendiz.avance ?? 0}%
+              </span>
             </div>
-          </div>
-          <div style="margin-top: 15px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <strong>Avance General:</strong>
-              <span style="font-weight: bold; color: ${getEstadoColor(aprendiz.avance >= 80 ? 'Completado' : aprendiz.avance >= 50 ? 'En proceso' : 'Pendiente')};">${aprendiz.avance}%</span>
-            </div>
-            <div style="width: 100%; height: 8px; background: #f3f4f6; border-radius: 10px; overflow: hidden; margin-top: 5px;">
-              <div style="width: ${aprendiz.avance}%; height: 100%; background: ${getEstadoColor(aprendiz.avance >= 80 ? 'Completado' : aprendiz.avance >= 50 ? 'En proceso' : 'Pendiente')}; border-radius: 10px;"></div>
+            <div style="width:100%;height:6px;background:#f3f4f6;border-radius:999px;overflow:hidden;">
+              <div style="width:${aprendiz.avance ?? 0}%;height:100%;background:${getEstadoColor(aprendiz.avance >= 80 ? 'Completado' : aprendiz.avance >= 50 ? 'En proceso' : 'Pendiente')};border-radius:999px;"></div>
             </div>
           </div>
         </div>
@@ -141,7 +156,59 @@ const ReporteFichaDetalle = () => {
       iconColor: '#3ca203',
       confirmButtonColor: '#3ca203',
       confirmButtonText: 'Cerrar',
-      width: '550px',
+      width: '480px',
+      padding: '1.1em 1.4em 1.2em',
+      heightAuto: true,
+      scrollbarPadding: false,
+      customClass: {
+        popup: 'swal2-compact-modal',
+        title: 'swal2-compact-title',
+        htmlContainer: 'swal2-compact-html',
+        icon: 'swal2-compact-icon',
+        actions: 'swal2-compact-actions',
+      },
+      didOpen: () => {
+        // Estilos compactos para que el modal quepa completo sin scroll
+        const styleId = 'swal2-compact-styles';
+        if (!document.getElementById(styleId)) {
+          const style = document.createElement('style');
+          style.id = styleId;
+          style.textContent = `
+            .swal2-compact-modal {
+              max-height: 90vh !important;
+              overflow: hidden !important;
+            }
+            .swal2-compact-title {
+              font-size: 1.15rem !important;
+              padding: 0 0 0.35em !important;
+              margin: 0 !important;
+            }
+            .swal2-compact-html {
+              margin: 0 !important;
+              padding: 0 !important;
+              overflow: visible !important;
+            }
+            .swal2-compact-icon {
+              width: 2.6em !important;
+              height: 2.6em !important;
+              margin: 0.4em auto 0.5em !important;
+              border-width: 0.2em !important;
+            }
+            .swal2-compact-icon .swal2-icon-content {
+              font-size: 1.6em !important;
+            }
+            .swal2-compact-actions {
+              margin: 0.9em 0 0 !important;
+              padding: 0 !important;
+            }
+            .swal2-compact-actions .swal2-confirm {
+              padding: 0.5em 1.6em !important;
+              font-size: 0.9rem !important;
+            }
+          `;
+          document.head.appendChild(style);
+        }
+      },
     });
   };
 
