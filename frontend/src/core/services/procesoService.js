@@ -33,6 +33,19 @@ export const procesoService = {
       modalidad_id: modalidadId,
     });
   },
+
+  // 🔥 Inactivar proceso (retirar de la ficha)
+  inactivarProceso: async (procesoId) => {
+    return await apiClient.patch(`/procesos/${procesoId}/inactivar`);
+  },
+
+  // 🔥 NUEVA FUNCIÓN: Reactivar proceso (volver a vincular)
+  reactivarProceso: async (procesoId) => {
+    return await apiClient.put(`/procesos/${procesoId}`, {
+      is_active: true,
+      estado: "ACTIVO" 
+    });
+  },
 };
 
 export default procesoService;
