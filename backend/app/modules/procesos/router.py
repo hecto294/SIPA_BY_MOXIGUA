@@ -110,8 +110,6 @@ def listar_procesos(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
-    print(f"🔍 [BACKEND] listar_procesos - aprendiz_id={aprendiz_id}, solo_activos={solo_activos}, rol={current_user.rol_id}")
-    
     if current_user.rol_id == Roles.INSTRUCTOR:
         instructor_id = current_user.id
     elif current_user.rol_id == Roles.APRENDIZ:
@@ -134,7 +132,6 @@ def listar_procesos(
         skip=skip,
         limit=limit,
     )
-    print(f"🔍 [BACKEND] Procesos encontrados: {len(result)}")
     return result
 
 
@@ -154,6 +151,27 @@ def obtener_avance_proceso(
         raise HTTPException(status_code=403, detail="No autorizado para ver este proceso")
 
     return crud.calcular_avance_proceso(db, proceso_id)
+
+
+# 🔥 NUEVA RUTA ESPECÍFICA PARA INACTIVAR (Evita el error 422)
+@router.patch("/{proceso_id}/inactivar", response_model=schemas.ProcesoOut)
+def inactivar_proceso(
+    proceso_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(Roles.ADMIN, Roles.COORDINADOR))
+):
+    proceso = crud.get_proceso(db, proceso_id)
+    if not proceso:
+        raise HTTPException(status_code=404, detail="Proceso no encontrado")
+    
+    # Inactivamos el proceso directamente en la base de datos
+    proceso.is_active = False
+    # Si tu modelo requiere cambiar el estado, descomenta la siguiente línea:
+    # proceso.estado = EstadoProceso.RETIRADO 
+    
+    db.commit()
+    db.refresh(proceso)
+    return proceso
 
 
 @router.put("/{proceso_id}", response_model=schemas.ProcesoOut)
@@ -200,7 +218,6 @@ def actualizar_proceso(
                 ).first():
                     raise HTTPException(status_code=404, detail="Coordinador no válido para la empresa")
 
-        # 🔥 NUEVO: Validar modalidad si viene
         if datos.modalidad_id is not None:
             modalidad = db.query(ModalidadEP).filter(
                 ModalidadEP.id == datos.modalidad_id,
