@@ -284,7 +284,7 @@ const VerFichas = () => {
             <div>
               <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;">Nivel *</label>
               <select id="new-nivel" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
-                <option value="Tecnólogo">Tecnólogo</option>
+                <option value="Tecnólogo">Tecnologo</option>
                 <option value="Técnico">Técnico</option>
                 <option value="Profesional">Profesional</option>
                 <option value="Especialización">Especialización</option>
