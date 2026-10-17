@@ -47,18 +47,40 @@ const Empresas = () => {
   const handleNuevaEmpresa = async () => {
     const { value: formValues } = await Swal.fire({
       title: 'Nueva Empresa',
-      html: '<div style="text-align:left;padding:10px 0;">' +
-        '<div style="margin-bottom:15px;"><label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Nombre de la empresa *</label>' +
-        '<input id="nombreEmpresa" class="swal2-input" placeholder="Ej. TechSoft S.A.S." style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>' +
-        '<div style="margin-bottom:15px;"><label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">NIT *</label>' +
-        '<input id="nitEmpresa" class="swal2-input" placeholder="Ej. 900.123.456-7" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>' +
-        '<div style="margin-bottom:15px;"><label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">ARL</label>' +
-        '<select id="arlEmpresa" class="swal2-input" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;">' +
-        '<option value="SURA">SURA</option><option value="Positiva">Positiva</option><option value="Colmena">Colmena</option>' +
-        '<option value="Seguros Bolívar">Seguros Bolívar</option><option value="La Equidad">La Equidad</option></select></div>' +
-        '<div style="margin-bottom:15px;"><label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Teléfono</label>' +
-        '<input id="telefonoEmpresa" class="swal2-input" placeholder="Ej. 3001234567" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>' +
-        '<p style="font-size:11px;color:#9ca3af;margin-top:8px;">* Campos obligatorios</p></div>',
+      customClass: {
+        popup: 'swal-form-popup'
+      },
+      html: `
+        <div class="swal-form-container">
+          <div class="swal-form-group">
+            <label>Nombre de la empresa *</label>
+            <input id="nombreEmpresa" class="swal2-input swal-custom-input" placeholder="Ej. TechSoft S.A.S.">
+          </div>
+          
+          <div class="swal-form-group">
+            <label>NIT *</label>
+            <input id="nitEmpresa" class="swal2-input swal-custom-input" placeholder="Ej. 900.123.456-7">
+          </div>
+          
+          <div class="swal-form-group">
+            <label>ARL</label>
+            <select id="arlEmpresa" class="swal2-input swal-custom-input">
+              <option value="SURA">SURA</option>
+              <option value="Positiva">Positiva</option>
+              <option value="Colmena">Colmena</option>
+              <option value="Seguros Bolívar">Seguros Bolívar</option>
+              <option value="La Equidad">La Equidad</option>
+            </select>
+          </div>
+          
+          <div class="swal-form-group">
+            <label>Teléfono</label>
+            <input id="telefonoEmpresa" class="swal2-input swal-custom-input" placeholder="Ej. 3001234567">
+          </div>
+          
+          <p class="swal-required-text">* Campos obligatorios</p>
+        </div>
+      `,
       focusConfirm: false,
       confirmButtonText: 'Guardar Empresa',
       confirmButtonColor: '#3ca203',
@@ -92,21 +114,40 @@ const Empresas = () => {
   const handleEditarEmpresa = async (empresa) => {
     const { value: formValues } = await Swal.fire({
       title: 'Editar Empresa',
-      html: '<div style="text-align:left;padding:10px 0;">' +
-        '<div style="margin-bottom:15px;"><label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Nombre *</label>' +
-        '<input id="editNombreEmpresa" class="swal2-input" value="' + (empresa.razon_social || '') + '" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>' +
-        '<div style="margin-bottom:15px;"><label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">NIT *</label>' +
-        '<input id="editNitEmpresa" class="swal2-input" value="' + (empresa.nit || '') + '" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>' +
-        '<div style="margin-bottom:15px;"><label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">ARL</label>' +
-        '<select id="editArlEmpresa" class="swal2-input" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;">' +
-        '<option value="SURA"' + (empresa.arl === 'SURA' ? ' selected' : '') + '>SURA</option>' +
-        '<option value="Positiva"' + (empresa.arl === 'Positiva' ? ' selected' : '') + '>Positiva</option>' +
-        '<option value="Colmena"' + (empresa.arl === 'Colmena' ? ' selected' : '') + '>Colmena</option>' +
-        '<option value="Seguros Bolívar"' + (empresa.arl === 'Seguros Bolívar' ? ' selected' : '') + '>Seguros Bolívar</option>' +
-        '<option value="La Equidad"' + (empresa.arl === 'La Equidad' ? ' selected' : '') + '>La Equidad</option></select></div>' +
-        '<div style="margin-bottom:15px;"><label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Teléfono</label>' +
-        '<input id="editTelefonoEmpresa" class="swal2-input" value="' + (empresa.telefono || '') + '" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>' +
-        '<p style="font-size:11px;color:#9ca3af;margin-top:8px;">* Campos obligatorios</p></div>',
+      customClass: {
+        popup: 'swal-form-popup'
+      },
+      html: `
+        <div class="swal-form-container">
+          <div class="swal-form-group">
+            <label>Nombre *</label>
+            <input id="editNombreEmpresa" class="swal2-input swal-custom-input" value="${empresa.razon_social || ''}">
+          </div>
+          
+          <div class="swal-form-group">
+            <label>NIT *</label>
+            <input id="editNitEmpresa" class="swal2-input swal-custom-input" value="${empresa.nit || ''}">
+          </div>
+          
+          <div class="swal-form-group">
+            <label>ARL</label>
+            <select id="editArlEmpresa" class="swal2-input swal-custom-input">
+              <option value="SURA" ${empresa.arl === 'SURA' ? 'selected' : ''}>SURA</option>
+              <option value="Positiva" ${empresa.arl === 'Positiva' ? 'selected' : ''}>Positiva</option>
+              <option value="Colmena" ${empresa.arl === 'Colmena' ? 'selected' : ''}>Colmena</option>
+              <option value="Seguros Bolívar" ${empresa.arl === 'Seguros Bolívar' ? 'selected' : ''}>Seguros Bolívar</option>
+              <option value="La Equidad" ${empresa.arl === 'La Equidad' ? 'selected' : ''}>La Equidad</option>
+            </select>
+          </div>
+          
+          <div class="swal-form-group">
+            <label>Teléfono</label>
+            <input id="editTelefonoEmpresa" class="swal2-input swal-custom-input" value="${empresa.telefono || ''}">
+          </div>
+          
+          <p class="swal-required-text">* Campos obligatorios</p>
+        </div>
+      `,
       focusConfirm: false,
       confirmButtonText: 'Guardar Cambios',
       confirmButtonColor: '#3ca203',
