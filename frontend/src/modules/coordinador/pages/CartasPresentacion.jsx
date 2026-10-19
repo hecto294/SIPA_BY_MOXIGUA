@@ -227,6 +227,14 @@ const CartasPresentacion = () => {
     setSearchQuery('');
   };
 
+  const cerrarModalIndividual = () => {
+    if (subiendo) return;
+    setShowModalIndividual(false);
+    setAprendizSeleccionado(null);
+    setArchivoIndividual(null);
+    setBusquedaAprendiz('');
+  };
+
   const filteredCartas = cartas.filter((c) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
@@ -237,15 +245,32 @@ const CartasPresentacion = () => {
     );
   });
 
-  const aprendicesFiltrados = aprendices.filter((a) => {
-    if (!busquedaAprendiz) return true;
-    const q = busquedaAprendiz.toLowerCase();
-    return (
-      (a.aprendiz_nombre || a.nombre || '').toLowerCase().includes(q) ||
-      (a.ficha_numero || a.numero_ficha || '').toLowerCase().includes(q) ||
-      (a.aprendiz_documento || '').toLowerCase().includes(q)
-    );
-  });
+  // Búsqueda específica: nunca lista completa; solo 1 aprendiz si es inequívoco
+  const terminoBusqueda = busquedaAprendiz.trim();
+  const buscarActivo = terminoBusqueda.length >= 3;
+
+  const coincidencias = buscarActivo
+    ? aprendices.filter((a) => {
+        const q = terminoBusqueda.toLowerCase();
+        const nombre = (a.aprendiz_nombre || a.nombre || '').toLowerCase();
+        const ficha = String(a.ficha_numero || a.numero_ficha || '').toLowerCase();
+        const documento = String(a.aprendiz_documento || a.documento_identidad || '').toLowerCase();
+
+        const docExacto = documento && documento === q;
+        const fichaExacta = ficha && ficha === q;
+        const nombreEspecifico =
+          nombre &&
+          (nombre === q ||
+            nombre.startsWith(q) ||
+            q.split(/\s+/).filter(Boolean).every((parte) => nombre.includes(parte)));
+
+        return docExacto || fichaExacta || nombreEspecifico;
+      })
+    : [];
+
+  const aprendizUnico = coincidencias.length === 1 ? coincidencias[0] : null;
+  const hayVarios = coincidencias.length > 1;
+  const sinResultados = buscarActivo && coincidencias.length === 0;
 
   const formatearFecha = (fecha) => {
     if (!fecha) return '-';
@@ -311,47 +336,121 @@ const CartasPresentacion = () => {
         <button className="cartas-btn cartas-btn-primary" onClick={handleSearch}>
           <i className="fas fa-search"></i> Buscar
         </button>
-        <button className="cartas-btn cartas-btn-secondary" onClick={handleClear}>Limpiar</button>
+        <button className="cartas-btn cartas-btn-secondary" onClick={handleClear}>
+          Limpiar
+        </button>
       </div>
 
       {filteredCartas.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
-          <i className="fas fa-envelope-open-text" style={{ fontSize: '56px', color: '#d1d5db', marginBottom: '16px' }} />
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '60px 20px',
+            background: 'white',
+            borderRadius: '12px',
+            border: '1px solid #e5e7eb',
+          }}
+        >
+          <i
+            className="fas fa-envelope-open-text"
+            style={{ fontSize: '56px', color: '#d1d5db', marginBottom: '16px' }}
+          />
           <h3 style={{ color: '#6b7280', margin: '0 0 8px 0' }}>
             {searchQuery ? 'Sin resultados' : 'No hay cartas de presentación'}
           </h3>
-          <p style={{ color: '#9ca3af', margin: 0 }}>Usa los botones de arriba para subir la primera carta.</p>
+          <p style={{ color: '#9ca3af', margin: 0 }}>
+            Usa los botones de arriba para subir la primera carta.
+          </p>
         </div>
       ) : (
-        <div style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #e5e7eb', overflowX: 'auto' }}>
+        <div
+          style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '20px',
+            border: '1px solid #e5e7eb',
+            overflowX: 'auto',
+          }}
+        >
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                <th style={{ textAlign: 'left', padding: '12px', color: '#6b7280', fontSize: '13px' }}>Aprendiz</th>
-                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280', fontSize: '13px' }}>Ficha</th>
-                <th style={{ textAlign: 'left', padding: '12px', color: '#6b7280', fontSize: '13px' }}>Programa</th>
-                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280', fontSize: '13px' }}>Archivo</th>
-                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280', fontSize: '13px' }}>Fecha</th>
-                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280', fontSize: '13px' }}>Acciones</th>
+                <th style={{ textAlign: 'left', padding: '12px', color: '#6b7280', fontSize: '13px' }}>
+                  Aprendiz
+                </th>
+                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280', fontSize: '13px' }}>
+                  Ficha
+                </th>
+                <th style={{ textAlign: 'left', padding: '12px', color: '#6b7280', fontSize: '13px' }}>
+                  Programa
+                </th>
+                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280', fontSize: '13px' }}>
+                  Archivo
+                </th>
+                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280', fontSize: '13px' }}>
+                  Fecha
+                </th>
+                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280', fontSize: '13px' }}>
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody>
               {filteredCartas.map((c) => (
                 <tr key={c.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td style={{ padding: '12px', fontWeight: '600' }}>{c.aprendiz_nombre || 'Sin nombre'}</td>
-                  <td style={{ textAlign: 'center', padding: '12px', color: '#3ca203', fontWeight: 'bold' }}>{c.ficha_numero || '-'}</td>
-                  <td style={{ padding: '12px', fontSize: '13px', color: '#6b7280' }}>{c.programa_nombre || '-'}</td>
+                  <td style={{ padding: '12px', fontWeight: '600' }}>
+                    {c.aprendiz_nombre || 'Sin nombre'}
+                  </td>
+                  <td
+                    style={{
+                      textAlign: 'center',
+                      padding: '12px',
+                      color: '#3ca203',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    {c.ficha_numero || '-'}
+                  </td>
+                  <td style={{ padding: '12px', fontSize: '13px', color: '#6b7280' }}>
+                    {c.programa_nombre || '-'}
+                  </td>
                   <td style={{ textAlign: 'center', padding: '12px', fontSize: '12px', color: '#6b7280' }}>
                     <i className="fas fa-file-pdf" style={{ color: '#dc2626', marginRight: '4px' }} />
                     {formatBytes(c.tamano_bytes)}
                   </td>
-                  <td style={{ textAlign: 'center', padding: '12px', fontSize: '12px', color: '#6b7280' }}>{formatearFecha(c.fecha_carga)}</td>
+                  <td style={{ textAlign: 'center', padding: '12px', fontSize: '12px', color: '#6b7280' }}>
+                    {formatearFecha(c.fecha_carga)}
+                  </td>
                   <td style={{ textAlign: 'center', padding: '12px' }}>
                     <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                      <button onClick={() => handleDescargar(c)} title="Descargar" style={{ background: '#e0f2fe', color: '#0369a1', border: 'none', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
+                      <button
+                        onClick={() => handleDescargar(c)}
+                        title="Descargar"
+                        style={{
+                          background: '#e0f2fe',
+                          color: '#0369a1',
+                          border: 'none',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                        }}
+                      >
                         <i className="fas fa-download" />
                       </button>
-                      <button onClick={() => handleEliminar(c)} title="Eliminar" style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
+                      <button
+                        onClick={() => handleEliminar(c)}
+                        title="Eliminar"
+                        style={{
+                          background: '#fee2e2',
+                          color: '#dc2626',
+                          border: 'none',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                        }}
+                      >
                         <i className="fas fa-trash" />
                       </button>
                     </div>
@@ -365,47 +464,75 @@ const CartasPresentacion = () => {
 
       {/* MODAL INDIVIDUAL */}
       {showModalIndividual && (
-        <div className="cartas-modal-overlay" onClick={() => !subiendo && setShowModalIndividual(false)}>
+        <div className="cartas-modal-overlay" onClick={cerrarModalIndividual}>
           <div className="cartas-modal cartas-modal-individual" onClick={(e) => e.stopPropagation()}>
             <div className="cartas-modal-header">
-              <h3><i className="fas fa-plus-circle" style={{ color: '#3ca203', marginRight: '8px' }} />Subir Carta Individual</h3>
-              <button className="cartas-modal-close" onClick={() => setShowModalIndividual(false)}>×</button>
+              <h3>
+                <i className="fas fa-plus-circle" style={{ color: '#3ca203', marginRight: '8px' }} />
+                Subir Carta Individual
+              </h3>
+              <button className="cartas-modal-close" onClick={cerrarModalIndividual}>
+                ×
+              </button>
             </div>
 
             <label className="cartas-label">Buscar aprendiz</label>
             <input
               type="text"
               className="cartas-input"
-              placeholder="Nombre, ficha o documento..."
+              placeholder="Documento, ficha o nombre completo (mín. 3 caracteres)..."
               value={busquedaAprendiz}
-              onChange={(e) => setBusquedaAprendiz(e.target.value)}
+              onChange={(e) => {
+                setBusquedaAprendiz(e.target.value);
+                setAprendizSeleccionado(null);
+              }}
+              autoFocus
             />
 
-            <div className="cartas-lista-aprendices">
-              {aprendicesFiltrados.length === 0 ? (
-                <div className="cartas-vacio">No se encontraron aprendices</div>
-              ) : (
-                aprendicesFiltrados.map((a) => {
-                  const procId = a.proceso_id || a.id;
-                  const sel = (aprendizSeleccionado?.proceso_id || aprendizSeleccionado?.id) === procId;
-                  return (
-                    <div
-                      key={procId}
-                      className={`cartas-item-aprendiz ${sel ? 'seleccionado' : ''}`}
-                      onClick={() => setAprendizSeleccionado(a)}
-                    >
-                      <strong>{a.aprendiz_nombre || a.nombre || 'Sin nombre'}</strong>
-                      <span>Ficha: {a.ficha_numero || a.numero_ficha || '-'}</span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+            {!buscarActivo && (
+              <div className="cartas-vacio" style={{ marginTop: '8px' }}>
+                Escribe el <strong>documento</strong>, la <strong>ficha</strong> o el{' '}
+                <strong>nombre completo</strong> del aprendiz. No se muestra la lista de usuarios.
+              </div>
+            )}
+
+            {sinResultados && (
+              <div className="cartas-vacio" style={{ marginTop: '8px' }}>
+                No se encontró ningún aprendiz con esa búsqueda.
+              </div>
+            )}
+
+            {hayVarios && (
+              <div className="cartas-vacio" style={{ marginTop: '8px' }}>
+                Hay varios resultados. Sé más específico (usa el <strong>número de documento</strong>).
+              </div>
+            )}
+
+            {aprendizUnico && (
+              <div
+                className={`cartas-item-aprendiz ${
+                  (aprendizSeleccionado?.proceso_id || aprendizSeleccionado?.id) ===
+                  (aprendizUnico.proceso_id || aprendizUnico.id)
+                    ? 'seleccionado'
+                    : ''
+                }`}
+                style={{ marginTop: '8px', cursor: 'pointer' }}
+                onClick={() => setAprendizSeleccionado(aprendizUnico)}
+              >
+                <strong>{aprendizUnico.aprendiz_nombre || aprendizUnico.nombre || 'Sin nombre'}</strong>
+                <span>
+                  Ficha: {aprendizUnico.ficha_numero || aprendizUnico.numero_ficha || '-'}
+                  {(aprendizUnico.aprendiz_documento || aprendizUnico.documento_identidad) &&
+                    ` · Doc: ${aprendizUnico.aprendiz_documento || aprendizUnico.documento_identidad}`}
+                </span>
+              </div>
+            )}
 
             {aprendizSeleccionado && (
               <div className="cartas-seleccionado-info">
                 <i className="fas fa-check-circle"></i>
-                Seleccionado: <strong>{aprendizSeleccionado.aprendiz_nombre || aprendizSeleccionado.nombre}</strong>
+                Seleccionado:{' '}
+                <strong>{aprendizSeleccionado.aprendiz_nombre || aprendizSeleccionado.nombre}</strong>
               </div>
             )}
 
@@ -418,7 +545,11 @@ const CartasPresentacion = () => {
             />
 
             <div className="cartas-modal-actions">
-              <button className="cartas-btn cartas-btn-secondary" onClick={() => setShowModalIndividual(false)} disabled={subiendo}>
+              <button
+                className="cartas-btn cartas-btn-secondary"
+                onClick={cerrarModalIndividual}
+                disabled={subiendo}
+              >
                 Cancelar
               </button>
               <button
@@ -435,28 +566,48 @@ const CartasPresentacion = () => {
 
       {/* MODAL MASIVO */}
       {showModalMasivo && (
-        <div className="cartas-modal-overlay" onClick={() => !subiendoMasivo && setShowModalMasivo(false)}>
+        <div
+          className="cartas-modal-overlay"
+          onClick={() => !subiendoMasivo && setShowModalMasivo(false)}
+        >
           <div className="cartas-modal cartas-modal-masivo" onClick={(e) => e.stopPropagation()}>
             <div className="cartas-modal-header">
-              <h3><i className="fas fa-boxes" style={{ color: '#0ea5e9', marginRight: '8px' }} />Carga Masiva</h3>
-              <button className="cartas-modal-close" onClick={() => setShowModalMasivo(false)}>×</button>
+              <h3>
+                <i className="fas fa-boxes" style={{ color: '#0ea5e9', marginRight: '8px' }} />
+                Carga Masiva
+              </h3>
+              <button className="cartas-modal-close" onClick={() => setShowModalMasivo(false)}>
+                ×
+              </button>
             </div>
 
             <div className="cartas-info-formato">
-              <strong><i className="fas fa-info-circle"></i> Formato del nombre:</strong>
+              <strong>
+                <i className="fas fa-info-circle"></i> Formato del nombre:
+              </strong>
               <br />
               <code>FICHA_DOCUMENTO.pdf</code>
               <br />
-              <small>Ejemplo: <code>2875901_1234567890.pdf</code></small>
-              <br /><br />
-              <button className="cartas-btn cartas-btn-primary" onClick={handleDescargarPlantilla} style={{ fontSize: '12px', padding: '6px 12px' }}>
+              <small>
+                Ejemplo: <code>2875901_1234567890.pdf</code>
+              </small>
+              <br />
+              <br />
+              <button
+                className="cartas-btn cartas-btn-primary"
+                onClick={handleDescargarPlantilla}
+                style={{ fontSize: '12px', padding: '6px 12px' }}
+              >
                 <i className="fas fa-file-excel"></i> Descargar plantilla Excel
               </button>
             </div>
 
             <div
               className={`cartas-dropzone ${dragActivo ? 'activo' : ''}`}
-              onDragOver={(e) => { e.preventDefault(); setDragActivo(true); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragActivo(true);
+              }}
               onDragLeave={() => setDragActivo(false)}
               onDrop={handleDrop}
               onClick={() => document.getElementById('input-masivo-file').click()}
@@ -476,7 +627,14 @@ const CartasPresentacion = () => {
 
             {archivosMasivos.length > 0 && (
               <>
-                <p style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: '600', color: '#374151' }}>
+                <p
+                  style={{
+                    margin: '0 0 8px 0',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#374151',
+                  }}
+                >
                   {archivosMasivos.length} archivo(s) seleccionado(s):
                 </p>
                 <div className="cartas-lista-archivos">
@@ -484,7 +642,9 @@ const CartasPresentacion = () => {
                     const valido = validarNombre(f.name);
                     return (
                       <div key={i} className={`cartas-archivo ${valido ? 'ok' : 'error'}`}>
-                        <span>{valido ? '✅' : '❌'} {f.name}</span>
+                        <span>
+                          {valido ? '✅' : '❌'} {f.name}
+                        </span>
                         <span className="cartas-archivo-tamano">{formatBytes(f.size)}</span>
                       </div>
                     );
@@ -494,7 +654,11 @@ const CartasPresentacion = () => {
             )}
 
             <div className="cartas-modal-actions">
-              <button className="cartas-btn cartas-btn-secondary" onClick={() => setShowModalMasivo(false)} disabled={subiendoMasivo}>
+              <button
+                className="cartas-btn cartas-btn-secondary"
+                onClick={() => setShowModalMasivo(false)}
+                disabled={subiendoMasivo}
+              >
                 Cancelar
               </button>
               <button
