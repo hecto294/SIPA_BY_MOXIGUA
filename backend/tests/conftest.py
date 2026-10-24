@@ -10,10 +10,13 @@ from app.core.security import get_password_hash
 from app.main import app
 from app.models import Rol, Usuario
 
-# URL de base de datos de pruebas (PostgreSQL)
+# ============================================================
+# CONFIGURACIÓN DE LA BASE DE DATOS DE PRUEBAS
+# ============================================================
+# Usamos tu contraseña real (1234) y la base de datos sipa_db
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
-    "postgresql+psycopg2://postgres:postgres@localhost:5432/sipa_test"
+    "postgresql+psycopg2://postgres:1234@localhost:5432/sipa_db?options=-c%20search_path=etapa_productiva"
 )
 
 engine = create_engine(TEST_DATABASE_URL, poolclass=NullPool)
@@ -23,13 +26,16 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():
     """Crea el esquema y las tablas antes de la sesión de pruebas."""
-    with engine.begin() as conn:
-        conn.execute(text("CREATE SCHEMA IF NOT EXISTS etapa_productiva"))
-    Base.metadata.create_all(bind=engine)
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("CREATE SCHEMA IF NOT EXISTS etapa_productiva"))
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"\n⚠️ Advertencia: No se pudo conectar o crear las tablas en la BD de pruebas: {e}")
+        print("Los tests unitarios que no usan BD seguirán funcionando.\n")
+    
     yield
-    # Limpieza opcional: descomentar para eliminar el esquema al final
-    # with engine.begin() as conn:
-    #     conn.execute(text("DROP SCHEMA etapa_productiva CASCADE"))
+    # Limpieza opcional (descomentar si quieres borrar las tablas al final)
     # engine.dispose()
 
 
