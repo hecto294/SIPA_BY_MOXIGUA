@@ -1,0 +1,83 @@
+# Variables compartidas por el backend y por el servicio de migraciones.
+# (Valores de DESARROLLO. Para otros entornos use variables propias o un .env no versionado.)
+x-backend-environment: &backend-environment
+  DATABASE_URL: postgresql+psycopg2://sipa_user:sipa_password@db:5432/sipa_db?options=-c%20search_path=etapa_productiva
+  SECRET_KEY: "sipa-moxigua-secret-key-desarrollo-2024-minimo-32-chars"
+  CORS_ORIGINS: "*"
+  FRONTEND_URL: "http://localhost:3000"
+  ENVIRONMENT: "development"
+  DEBUG: "true"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sipa_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sipa_user
+      POSTGRES_PASSWORD: sipa_password
+      POSTGRES_DB: sipa_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sipa_user -d sipa_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sipa_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment: *backend-environment
+    volumes:
+      - ./backend/evidencias:/app/evidencias
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ------------------------------------------------------------------
+  # Migraciones de base de datos (Alembic). Servicio de ejecución PUNTUAL:
+  # no arranca con "docker compose up" (profile "tools"); se invoca a mano:
+  #   docker compose run --rm migrate                      -> alembic upgrade head
+  #   docker compose run --rm migrate alembic current      -> cualquier otro comando
+  # Los volúmenes permiten que las migraciones generadas aparezcan en
+  # backend/alembic/versions del equipo y que autogenerate vea los modelos
+  # actuales de backend/app sin reconstruir la imagen.
+  # ------------------------------------------------------------------
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    profiles: ["tools"]
+    environment: *backend-environment
+    volumes:
+      - ./backend/alembic:/app/alembic
+      - ./backend/app:/app/app:ro
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000
+    container_name: sipa_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
