@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 -- ############################################################
 -- # LEGADO -- NO USAR EN BASES DE DATOS CON INFORMACIÓN        #
 -- # Este script comienza con DROP SCHEMA ... CASCADE y BORRA   #
@@ -7,6 +8,8 @@
 -- # contiene el mismo DDL sin sentencias destructivas).        #
 -- # Se conserva solo como referencia histórica.                #
 -- ############################################################
+=======
+>>>>>>> d89d76cde2e0288479ec6746643de88d316a219d
 -- ============================================================
 -- SCRIPT COMPLETO - SIPA (Actualizado con todos los cambios)
 -- ============================================================
