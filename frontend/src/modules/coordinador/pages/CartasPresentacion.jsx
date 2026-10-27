@@ -213,7 +213,8 @@ const CartasPresentacion = () => {
     }
   };
 
-  const handleDescargar = (carta) => {
+  // Abre el PDF en una pestaña nueva (Ver)
+  const handleVer = (carta) => {
     const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
     const url = carta.archivo_url.startsWith('http')
       ? carta.archivo_url
@@ -348,10 +349,34 @@ const CartasPresentacion = () => {
                   <td style={{ textAlign: 'center', padding: '12px', fontSize: '12px', color: '#6b7280' }}>{formatearFecha(c.fecha_carga)}</td>
                   <td style={{ textAlign: 'center', padding: '12px' }}>
                     <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                      <button onClick={() => handleDescargar(c)} title="Descargar" style={{ background: '#e0f2fe', color: '#0369a1', border: 'none', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
-                        <i className="fas fa-download" />
+                      <button
+                        onClick={() => handleVer(c)}
+                        title="Ver"
+                        style={{
+                          background: '#e0f2fe',
+                          color: '#0369a1',
+                          border: 'none',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                        }}
+                      >
+                        <i className="fas fa-eye" />
                       </button>
-                      <button onClick={() => handleEliminar(c)} title="Eliminar" style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
+                      <button
+                        onClick={() => handleEliminar(c)}
+                        title="Eliminar"
+                        style={{
+                          background: '#fee2e2',
+                          color: '#dc2626',
+                          border: 'none',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                        }}
+                      >
                         <i className="fas fa-trash" />
                       </button>
                     </div>
