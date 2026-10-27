@@ -1,7 +1,9 @@
 // src/modules/coordinador/pages/DetalleAprendiz.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Breadcrumb from '@/modules/shared/components/Breadcrumb';
+import { apiClient } from '@/core/api/client';
+import Swal from 'sweetalert2';
 
 const DetalleAprendiz = () => {
   const navigate = useNavigate();
@@ -11,6 +13,10 @@ const DetalleAprendiz = () => {
   const proceso = location.state?.proceso;
 
   console.log('🔍 Proceso recibido:', proceso);
+
+  // Estados para la nueva sección de Novedades
+  const [novedadText, setNovedadText] = useState('');
+  const [guardando, setGuardando] = useState(false);
 
   const formatearFecha = (fecha) => {
     if (!fecha) return '-';
@@ -43,6 +49,32 @@ const DetalleAprendiz = () => {
       return `${partes[0].charAt(0)}${partes[1].charAt(0)}`.toUpperCase();
     }
     return nombre.substring(0, 2).toUpperCase();
+  };
+
+  // 🔥 Nueva función para guardar la Novedad
+  const handleGuardarNovedad = async () => {
+    if (!novedadText.trim()) {
+      Swal.fire('Atención', 'Escribe una descripción para la novedad', 'warning');
+      return;
+    }
+
+    setGuardando(true);
+    try {
+      // Usamos el endpoint POST /procesos/{proceso_id}/novedades que ya existe en el backend
+      await apiClient.post(`/procesos/${proceso.id}/novedades`, {
+        tipo_novedad: 'CAMBIO_EMPRESA', // Por defecto, puedes cambiarlo si lo necesitas
+        fecha_novedad: new Date().toISOString().split('T')[0],
+        descripcion: novedadText
+      });
+      
+      Swal.fire('Éxito', 'Novedad registrada correctamente', 'success');
+      setNovedadText(''); // Limpiar el campo de texto
+    } catch (error) {
+      console.error('Error al guardar novedad:', error);
+      Swal.fire('Error', error.message || 'No se pudo guardar la novedad', 'error');
+    } finally {
+      setGuardando(false);
+    }
   };
 
   // Si no viene el proceso (acceso directo por URL), mostrar mensaje
@@ -264,6 +296,66 @@ const DetalleAprendiz = () => {
                 {formatearFecha(proceso.fecha_fin)}
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* ==================== NUEVA SECCIÓN: NOVEDAD ==================== */}
+        <div style={{ borderTop: '2px solid #f3f4f6', paddingTop: '20px', marginTop: '30px' }}>
+          <h3
+            style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#1f2937',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <i className="fas fa-exclamation-triangle" style={{ color: '#f59e0b' }} />
+            Registrar Novedad / Cambio de Ficha
+          </h3>
+
+          <div style={{ marginBottom: '15px' }}>
+            <textarea
+              value={novedadText}
+              onChange={(e) => setNovedadText(e.target.value)}
+              placeholder="Describe el motivo del cambio de ficha o la novedad..."
+              style={{
+                width: '100%',
+                minHeight: '80px',
+                padding: '12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              onClick={handleGuardarNovedad}
+              disabled={guardando}
+              style={{
+                background: '#3ca203',
+                color: 'white',
+                border: 'none',
+                padding: '10px 24px',
+                borderRadius: '8px',
+                fontWeight: 'bold',
+                cursor: guardando ? 'not-allowed' : 'pointer',
+                opacity: guardando ? 0.7 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              {guardando ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-save" />}
+              {guardando ? 'Guardando...' : 'Guardar Novedad'}
+            </button>
           </div>
         </div>
 
