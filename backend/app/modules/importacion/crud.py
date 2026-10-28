@@ -74,7 +74,17 @@ def leer_archivo(file_bytes: bytes, filename: str) -> List[Dict[str, Any]]:
 # ============================================================
 
 def validar_fila_usuario(data: Dict[str, Any]) -> Tuple[bool, str, Dict[str, Any]]:
-    campos_requeridos = ["nombre", "apellido", "email", "password_hash", "rol_id"]
+    # 1. Buscar la contraseña (acepta 'contraseña', 'password' o 'password_hash')
+    password_plano = None
+    for key in ["contraseña", "password", "password_hash"]:
+        if key in data and data[key]:
+            password_plano = str(data[key])
+            break
+    
+    if not password_plano:
+        return False, "Campo requerido faltante: contraseña", None
+
+    campos_requeridos = ["nombre", "apellido", "email"]
     for campo in campos_requeridos:
         if not data.get(campo):
             return False, f"Campo requerido faltante: {campo}", None
@@ -83,12 +93,10 @@ def validar_fila_usuario(data: Dict[str, Any]) -> Tuple[bool, str, Dict[str, Any
     if "@" not in email or "." not in email:
         return False, f"Email inválido: {email}", None
 
-    try:
-        rol_id = int(data["rol_id"])
-    except (ValueError, TypeError):
-        return False, f"rol_id no es un número: {data['rol_id']}", None
+    # 2. Hacer que rol_id sea opcional y por defecto sea 3 (Instructor)
+    rol_id_raw = data.get("rol_id")
+    rol_id = int(rol_id_raw) if rol_id_raw else 3
 
-    password_plano = str(data["password_hash"])
     if len(password_plano) < 8:
         return False, "La contraseña debe tener al menos 8 caracteres", None
 
@@ -96,7 +104,7 @@ def validar_fila_usuario(data: Dict[str, Any]) -> Tuple[bool, str, Dict[str, Any
         "nombre": str(data["nombre"]).strip(),
         "apellido": str(data["apellido"]).strip(),
         "email": email,
-        "password_hash": get_password_hash(password_plano),
+        "password_hash": get_password_hash(password_plano), # Se encripta aquí
         "documento_identidad": data.get("documento_identidad") or None,
         "telefono": data.get("telefono") or None,
         "rol_id": rol_id,
