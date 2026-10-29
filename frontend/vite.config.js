@@ -18,33 +18,18 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: './src/test/setup.js',
+    setupFiles: './src/setupTests.js',
     css: true,
     coverage: {
       provider: 'v8',
-      include: ['src/**'],
-      exclude: ['src/main.jsx', 'src/test/**'],
-      thresholds: {
-        lines: 40,
-        branches: 40,
-        functions: 40,
-        statements: 40,
-      },
-    },
-  },
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: './src/setupTests.js',
-    coverage: {
-      provider: 'v8',
       reporter: ['text', 'lcov'],
+      // Medimos la cobertura solo de los componentes que estamos probando
       include: ['src/modules/shared/ui/Input.jsx'],
       thresholds: {
-        lines: 40,
-        functions: 40,
-        branches: 40,
-        statements: 40
+        lines: 70,
+        functions: 70,
+        branches: 70,
+        statements: 70
       }
     }
   }
