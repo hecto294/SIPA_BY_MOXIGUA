@@ -27,3 +27,6 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+coverage/
+pnpm-lock.yaml
+pnpm-workspace.yaml

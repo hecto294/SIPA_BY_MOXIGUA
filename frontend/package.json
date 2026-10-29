@@ -8,8 +8,13 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+<<<<<<< HEAD
     "test": "vitest run --coverage",
     "test:watch": "vitest"
+=======
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+>>>>>>> 9546b6ff559ed6e5ff51861d72719a605d7247a7
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.5.1",
@@ -24,6 +29,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
+<<<<<<< HEAD
+=======
+    "@testing-library/dom": "^10.4.2",
+>>>>>>> 9546b6ff559ed6e5ff51861d72719a605d7247a7
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.8",
