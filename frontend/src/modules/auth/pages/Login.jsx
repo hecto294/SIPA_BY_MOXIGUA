@@ -111,16 +111,27 @@ const Login = () => {
 
           <form onSubmit={handleSubmit}>
             {error && (
-              <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '10px', borderRadius: '8px', marginBottom: '15px', fontSize: '14px' }}>
+              <div
+                role="alert"
+                style={{
+                  backgroundColor: '#fee2e2',
+                  color: '#b91c1c',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  marginBottom: '15px',
+                  fontSize: '14px',
+                }}
+              >
                 {error}
               </div>
             )}
 
             <div className="form-group">
-              <label>Correo electrónico</label>
+              <label htmlFor="login-email">Correo electrónico</label>
               <div className="input-wrapper">
                 <i className="fa-solid fa-envelope"></i>
                 <input
+                  id="login-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -131,10 +142,11 @@ const Login = () => {
             </div>
 
             <div className="form-group">
-              <label>Contraseña</label>
+              <label htmlFor="login-password">Contraseña</label>
               <div className="input-wrapper">
                 <i className="fa-solid fa-lock"></i>
                 <input
+                  id="login-password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

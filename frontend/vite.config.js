@@ -13,6 +13,23 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
-    hmr: false  // <--- ESTO ELIMINA EL ERROR
+    hmr: false,
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.js',
+    css: true,
+    coverage: {
+      provider: 'v8',
+      include: ['src/**'],
+      exclude: ['src/main.jsx', 'src/test/**'],
+      thresholds: {
+        lines: 40,
+        branches: 40,
+        functions: 40,
+        statements: 40,
+      },
+    },
   },
 })
