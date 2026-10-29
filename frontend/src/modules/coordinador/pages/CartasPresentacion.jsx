@@ -213,7 +213,8 @@ const CartasPresentacion = () => {
     }
   };
 
-  const handleDescargar = (carta) => {
+  // Abre el PDF en una pestaña nueva (Ver)
+  const handleVer = (carta) => {
     const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
     const url = carta.archivo_url.startsWith('http')
       ? carta.archivo_url
@@ -245,7 +246,6 @@ const CartasPresentacion = () => {
     );
   });
 
-  // Búsqueda específica: nunca lista completa; solo 1 aprendiz si es inequívoco
   const terminoBusqueda = busquedaAprendiz.trim();
   const buscarActivo = terminoBusqueda.length >= 3;
 
@@ -424,8 +424,8 @@ const CartasPresentacion = () => {
                   <td style={{ textAlign: 'center', padding: '12px' }}>
                     <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                       <button
-                        onClick={() => handleDescargar(c)}
-                        title="Descargar"
+                        onClick={() => handleVer(c)}
+                        title="Ver"
                         style={{
                           background: '#e0f2fe',
                           color: '#0369a1',
@@ -436,7 +436,7 @@ const CartasPresentacion = () => {
                           fontSize: '12px',
                         }}
                       >
-                        <i className="fas fa-download" />
+                        <i className="fas fa-eye" />
                       </button>
                       <button
                         onClick={() => handleEliminar(c)}

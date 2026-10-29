@@ -93,7 +93,7 @@ const InstructoresGlobales = () => {
               <strong>Selecciona un archivo Excel (.xlsx) o CSV</strong>
             </p>
             <p style="font-size: 12px; color: #9ca3af; margin: 5px 0 0 0;">
-              Columnas: <strong>nombre, apellido, email, password_hash, rol_id</strong> (rol_id = 3)
+              Columnas: <strong>nombre, apellido, email, contraseña</strong>
             </p>
           </div>
           <div style="margin: 15px 0;">
