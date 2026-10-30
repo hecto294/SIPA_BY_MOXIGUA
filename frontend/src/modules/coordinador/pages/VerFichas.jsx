@@ -284,7 +284,7 @@ const VerFichas = () => {
             <div>
               <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;">Nivel *</label>
               <select id="new-nivel" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
-                <option value="Tecnólogo">Tecnologo</option>
+                <option value="Tecnólogo">Tecnólogo</option>
                 <option value="Técnico">Técnico</option>
                 <option value="Profesional">Profesional</option>
                 <option value="Especialización">Especialización</option>
@@ -511,12 +511,12 @@ const VerFichas = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                <th style={{ textAlign: 'left', padding: '12px', color: '#6b7280' }}>Código</th>
-                <th style={{ textAlign: 'left', padding: '12px', color: '#6b7280' }}>Programa</th>
-                <th style={{ textAlign: 'left', padding: '12px', color: '#6b7280' }}>Nivel</th>
+                <th style={{ textAlign: 'left', padding: '12px', color: '#6b7280' }}>Grupo- Ficha</th>
+                <th style={{ textAlign: 'left', padding: '12px', color: '#6b7280' }}>Programa Formación</th>
+                <th style={{ textAlign: 'left', padding: '12px', color: '#6b7280' }}>Nivel Formación</th>
                 <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280' }}>Aprendices</th>
-                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280' }}>Inicio Productiva</th>
-                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280' }}>Fin Productiva</th>
+                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280' }}>Fecha Ini EP Grupo</th>
+                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280' }}>Fecha Fin Grupo</th>
                 <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280' }}>Estado</th>
                 <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280' }}>Acciones</th>
               </tr>
