@@ -1,5 +1,5 @@
 [tool.pytest.ini_options]
-addopts = "--cov=app --cov-report=term-missing --cov-fail-under=30"
+addopts = "--cov=app --cov-report=term-missing --cov-fail-under=70"
 
 [tool.coverage.run]
 omit = ["tests/*", "*/__init__.py"]
