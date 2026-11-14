@@ -1,8 +1,9 @@
-﻿# Matriz de Rotación de Capas - SIPA BY MOXIGUA
+﻿# Matriz de Rotación de Capas
 
-| Integrante | S1 (E2E) | S2 (Unit) | S3 (Componentes) | S4 (API/Seguridad) | S5 (Mocks/Dobles) | S6 (Integración/BD) |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| Hermes Orjuela | - | - | - | - | - | - |
-| Joan Rondon | - | - | - | - | - | - |
-| Santiago Muñoz | - | - | - | - | - | - |
-| Héctor Sana | - | - | Input | Endpoints / Seguridad | Servicios e Integraciones (Mocks/Dobles) | Integración de Base de Datos (Docker) |
+| Integrante | S1 (E2E) | S2 (Unit) | S3 (Front) |
+| :--- | :--- | :--- | :--- |
+| Tu Nombre | E2E | - | - |
+| Compañero 1 | - | Backend | - |
+| Compañero 2 | - | - | LoginForm |
+
+*(Nota: Reemplaza los nombres y las capas según lo que acordaron en grupo).*
