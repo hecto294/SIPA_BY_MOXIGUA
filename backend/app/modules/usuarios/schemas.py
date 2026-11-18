@@ -126,16 +126,21 @@ class UsuarioOut(BaseModel):
     id: int
     nombre: str
     apellido: str
-    email: EmailStr
+    email: str  # solo salida: no se rechaza la lista completa por un correo atípico
     tipo_documento: Optional[str] = None
     documento_identidad: Optional[str] = None
     telefono: Optional[str] = None
     avatar_url: Optional[str] = None  # 🔥 NUEVO
     rol_id: int
     is_active: bool
-    preferencias_ui: dict = {}
-    created_at: datetime
-    updated_at: datetime
+    preferencias_ui: Optional[dict] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    @field_validator("preferencias_ui", mode="before")
+    @classmethod
+    def _preferencias_por_defecto(cls, v):
+        return v if isinstance(v, dict) else {}
 
 
 class UsuarioConRol(UsuarioOut):

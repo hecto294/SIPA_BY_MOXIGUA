@@ -39,6 +39,15 @@ export const procesoService = {
     return await apiClient.patch(`/procesos/${procesoId}/inactivar`);
   },
 
+  // Novedades del proceso (cambio de ficha, incapacidad, etc.)
+  getNovedades: async (procesoId) => {
+    return await apiClient.get(`/procesos/${procesoId}/novedades`);
+  },
+
+  crearNovedad: async (procesoId, data) => {
+    return await apiClient.post(`/procesos/${procesoId}/novedades`, data);
+  },
+
   // 🔥 NUEVA FUNCIÓN: Reactivar proceso (volver a vincular)
   reactivarProceso: async (procesoId) => {
     return await apiClient.put(`/procesos/${procesoId}`, {
