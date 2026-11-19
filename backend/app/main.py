@@ -53,6 +53,8 @@ async def lifespan(app: FastAPI):
     """
     Contexto de vida de la aplicacion.
     """
+    from app.core.auto_migrate import run_auto_migrate
+    run_auto_migrate()
     yield
 
 
