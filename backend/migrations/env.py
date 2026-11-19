@@ -57,7 +57,7 @@ ADVISORY_LOCK_ID = 727_000_001
 def include_name(name, type_, parent_names):
     """Con include_schemas=True, limita la comparación al esquema de la app."""
     if type_ == "schema":
-        return name in (None, TARGET_SCHEMA)
+        return name == TARGET_SCHEMA
     return True
 
 
