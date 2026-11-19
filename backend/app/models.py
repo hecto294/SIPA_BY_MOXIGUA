@@ -202,6 +202,8 @@ class Ficha(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     deleted_at = Column(DateTime(timezone=True))
 
+    programa = relationship("ProgramaFormacion", foreign_keys=[programa_id])
+
 
 class AsignacionInstructorFicha(Base):
     __tablename__ = "asignaciones_instructor_ficha"
@@ -303,6 +305,10 @@ class ProcesoEtapaProductiva(Base):
     nota_empresa = Column(Numeric(3, 1))
     nota_instructor = Column(Numeric(3, 1))
     observaciones = Column(Text)
+    raps_pendientes = Column(Integer, nullable=True)
+    porcentaje_raps = Column(Numeric(5, 2), nullable=True)
+    fecha_inicio_contrato = Column(Date, nullable=True)
+    fecha_fin_contrato = Column(Date, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -351,6 +357,12 @@ class ProcesoEtapaProductiva(Base):
     @property
     def modalidad_nombre(self) -> str | None:
         return self.modalidad.nombre if self.modalidad else None
+
+    @property
+    def programa_nombre(self) -> str | None:
+        if self.ficha and self.ficha.programa:
+            return self.ficha.programa.nombre
+        return None
 
     @property
     def centro_formacion_codigo(self) -> str | None:

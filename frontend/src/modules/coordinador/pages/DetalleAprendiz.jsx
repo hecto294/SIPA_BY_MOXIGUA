@@ -1,7 +1,17 @@
 // src/modules/coordinador/pages/DetalleAprendiz.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import Breadcrumb from '@/modules/shared/components/Breadcrumb';
+import { procesoService } from '@/core/services/procesoService';
+
+const TIPOS_NOVEDAD = [
+  { value: 'OTRO', label: 'Cambio de ficha / otro' },
+  { value: 'CAMBIO_EMPRESA', label: 'Cambio de empresa' },
+  { value: 'INCAPACIDAD', label: 'Incapacidad' },
+  { value: 'PRORROGA', label: 'Prórroga' },
+  { value: 'RENUNCIA', label: 'Renuncia' },
+];
 
 const DetalleAprendiz = () => {
   const navigate = useNavigate();
@@ -10,11 +20,69 @@ const DetalleAprendiz = () => {
   // 🔥 Obtener el proceso que se pasó desde AprendicesGlobales
   const proceso = location.state?.proceso;
 
+  // ==================== NOVEDADES ====================
+  const [novedades, setNovedades] = useState([]);
+  const [textoNovedad, setTextoNovedad] = useState('');
+  const [tipoNovedad, setTipoNovedad] = useState('OTRO');
+  const [guardando, setGuardando] = useState(false);
+
+  useEffect(() => {
+    if (!proceso?.id) return;
+    procesoService
+      .getNovedades(proceso.id)
+      .then((data) => setNovedades(Array.isArray(data) ? data : []))
+      .catch(() => setNovedades([]));
+  }, [proceso?.id]);
+
+  const handleGuardarNovedad = async () => {
+    const descripcion = textoNovedad.trim();
+    if (descripcion.length < 5) {
+      Swal.fire({
+        title: '⚠️ Escribe la novedad',
+        text: 'La descripción debe tener al menos 5 caracteres.',
+        icon: 'warning',
+        confirmButtonColor: '#3ca203',
+      });
+      return;
+    }
+    try {
+      setGuardando(true);
+      const hoy = new Date();
+      const fecha = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+      const creada = await procesoService.crearNovedad(proceso.id, {
+        tipo_novedad: tipoNovedad,
+        fecha_novedad: fecha,
+        descripcion,
+      });
+      setNovedades((prev) => [creada, ...prev]);
+      setTextoNovedad('');
+      setTipoNovedad('OTRO');
+      Swal.fire({
+        title: '✅ Novedad guardada',
+        icon: 'success',
+        confirmButtonColor: '#3ca203',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      Swal.fire({
+        title: '❌ No se pudo guardar',
+        text: err.message || 'Error al guardar la novedad',
+        icon: 'error',
+        confirmButtonColor: '#dc2626',
+      });
+    } finally {
+      setGuardando(false);
+    }
+  };
+
   console.log('🔍 Proceso recibido:', proceso);
 
   const formatearFecha = (fecha) => {
     if (!fecha) return '-';
     try {
+      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(fecha));
+      if (m) return new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString('es-ES');
       return new Date(fecha).toLocaleDateString('es-ES');
     } catch {
       return fecha;
@@ -264,6 +332,98 @@ const DetalleAprendiz = () => {
                 {formatearFecha(proceso.fecha_fin)}
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* ==================== NOVEDADES ==================== */}
+        <div style={{ borderTop: '2px solid #f3f4f6', paddingTop: '20px', marginTop: '30px' }}>
+          <h3
+            style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#1f2937',
+              marginBottom: '15px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <i className="fas fa-clipboard-list" style={{ color: '#3ca203' }} />
+            Novedades
+          </h3>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <select
+              value={tipoNovedad}
+              onChange={(e) => setTipoNovedad(e.target.value)}
+              style={{ padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }}
+            >
+              {TIPOS_NOVEDAD.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+            <textarea
+              value={textoNovedad}
+              onChange={(e) => setTextoNovedad(e.target.value)}
+              placeholder="Escribe una novedad (ej: cambio de ficha)..."
+              rows={2}
+              maxLength={2000}
+              style={{
+                flex: 1,
+                minWidth: '220px',
+                padding: '8px 10px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '13px',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+              }}
+            />
+            <button
+              onClick={handleGuardarNovedad}
+              disabled={guardando}
+              style={{
+                background: '#3ca203',
+                color: 'white',
+                border: 'none',
+                padding: '9px 20px',
+                borderRadius: '8px',
+                cursor: guardando ? 'not-allowed' : 'pointer',
+                fontWeight: 'bold',
+                fontSize: '14px',
+                opacity: guardando ? 0.7 : 1,
+              }}
+            >
+              <i className="fas fa-save" /> {guardando ? 'Guardando...' : 'Guardar'}
+            </button>
+          </div>
+
+          <div style={{ marginTop: '15px' }}>
+            {novedades.length === 0 ? (
+              <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>
+                Este aprendiz no tiene novedades registradas.
+              </p>
+            ) : (
+              novedades.map((n) => (
+                <div
+                  key={n.id}
+                  style={{
+                    background: '#f9fafb',
+                    borderLeft: '3px solid #3ca203',
+                    padding: '10px 14px',
+                    borderRadius: '6px',
+                    marginBottom: '8px',
+                  }}
+                >
+                  <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                    {(TIPOS_NOVEDAD.find((t) => t.value === n.tipo_novedad) || {}).label || n.tipo_novedad}
+                    {' · '}
+                    {formatearFecha(n.fecha_novedad)}
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#1f2937', marginTop: '3px' }}>{n.descripcion}</div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

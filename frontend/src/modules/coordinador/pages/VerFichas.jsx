@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import Breadcrumb from '../../shared/components/Breadcrumb';
 import * as XLSX from 'xlsx';
 import { fichaService } from '@/core/services/fichaService';
+import { procesoService } from '@/core/services/procesoService';
 import { importacionService } from '@/core/services/importacionService';
 
 const VerFichas = () => {
@@ -14,6 +15,7 @@ const VerFichas = () => {
 
   const [fichas, setFichas] = useState([]);
   const [programas, setProgramas] = useState([]);
+  const [procesos, setProcesos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -25,12 +27,14 @@ const VerFichas = () => {
     try {
       setLoading(true);
       setError(null);
-      const [fichasData, programasData] = await Promise.all([
+      const [fichasData, programasData, procesosData] = await Promise.all([
         fichaService.getFichas().catch(() => []),
         fichaService.getProgramas().catch(() => []),
+        procesoService.getProcesos().catch(() => []),
       ]);
       setFichas(Array.isArray(fichasData) ? fichasData : []);
       setProgramas(Array.isArray(programasData) ? programasData : []);
+      setProcesos(Array.isArray(procesosData) ? procesosData : []);
     } catch (err) {
       console.error('Error al cargar datos:', err);
       setError(err.message || 'Error al cargar fichas');
@@ -59,12 +63,40 @@ const VerFichas = () => {
     setSearchQuery('');
   };
 
-  const filteredFichas = fichas.filter((f) => {
+  // Duración en meses entre dos fechas (para la columna "Duración")
+  const calcularDuracion = (ini, fin) => {
+    if (!ini || !fin) return '-';
+    const a = new Date(ini);
+    const b = new Date(fin);
+    if (isNaN(a) || isNaN(b)) return '-';
+    const meses = Math.round((b - a) / (1000 * 60 * 60 * 24 * 30.44));
+    return `${meses} meses`;
+  };
+
+  // Una fila por aprendiz (proceso) con los datos de su ficha; si la ficha no
+  // tiene aprendices, se muestra una fila solo con los datos de la ficha.
+  const filas = fichas.flatMap((f) => {
+    const ps = procesos.filter((p) => p.ficha_id === f.id);
+    return ps.length ? ps.map((p) => ({ f, p })) : [{ f, p: null }];
+  });
+
+  // "CC 123456" -> { tipo: 'CC', numero: '123456' }
+  const separarDocumento = (doc) => {
+    if (!doc) return { tipo: '-', numero: '-' };
+    const partes = String(doc).trim().split(' ');
+    return partes.length > 1
+      ? { tipo: partes[0], numero: partes.slice(1).join(' ') }
+      : { tipo: '-', numero: partes[0] };
+  };
+
+  const filteredFichas = filas.filter(({ f, p }) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    const numero = (f.numero_ficha || '').toLowerCase();
-    const programa = getNombrePrograma(f.programa_id).toLowerCase();
-    return numero.includes(q) || programa.includes(q);
+    const numero = String(f.numero_ficha || '').toLowerCase();
+    const programa = String(getNombrePrograma(f.programa_id) || '').toLowerCase();
+    const nombreAprendiz = String(p?.aprendiz_nombre || '').toLowerCase();
+    const documento = String(p?.aprendiz_documento || '').toLowerCase();
+    return numero.includes(q) || programa.includes(q) || nombreAprendiz.includes(q) || documento.includes(q);
   });
 
   // ==========================================================
@@ -103,16 +135,6 @@ const VerFichas = () => {
               style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;"
             />
           </div>
-
-          <div style="background: #eff6ff; padding: 10px 12px; border-radius: 6px; border: 1px solid #bfdbfe; font-size: 12px; color: #1e40af;">
-            <i class="fas fa-info-circle"></i>
-            <strong>Ejemplo del archivo:</strong>
-            <div style="margin-top: 6px; font-family: monospace; background: white; padding: 6px; border-radius: 4px;">
-              documento | estado<br/>
-              111111111 | ACTIVO<br/>
-              222222222 | CONDICIONADO
-            </div>
-          </div>
         </div>
       `,
       icon: 'info',
@@ -145,69 +167,7 @@ const VerFichas = () => {
 
         const respuesta = await importacionService.importar('estados-aprendices', archivo);
 
-        console.log('📤 Resultado carga masiva:', respuesta);
-
-        const {
-          total_filas,
-          filas_insertadas,
-          filas_con_error,
-          errores,
-          filas_con_advertencia = 0,
-          filas_rechazadas = 0,
-          detalle_advertencias = [],
-          detalle_rechazadas = [],
-        } = respuesta;
-
         await cargarDatos();
-
-        const htmlAdvertencias = detalle_advertencias.length > 0
-          ? `
-            <div style="text-align:left; margin-top:16px;">
-              <p style="color:#d97706; font-weight:bold; margin:0 0 8px 0; font-size:14px;">
-                <i class="fas fa-exclamation-triangle"></i>
-                Con advertencia (${filas_con_advertencia})
-              </p>
-              <ul style="font-size:12px; max-height:150px; overflow-y:auto; margin:0; padding-left:20px; color:#92400e;">
-                ${detalle_advertencias.map((d) =>
-                  `<li>${d.nombre || d.documento || 'Sin nombre'} - <b>${d.estado}</b></li>`
-                ).join('')}
-              </ul>
-            </div>`
-          : '';
-
-        const htmlRechazados = detalle_rechazadas.length > 0
-          ? `
-            <div style="text-align:left; margin-top:16px;">
-              <p style="color:#dc2626; font-weight:bold; margin:0 0 8px 0; font-size:14px;">
-                <i class="fas fa-times-circle"></i>
-                Rechazados (${filas_rechazadas})
-              </p>
-              <ul style="font-size:12px; max-height:150px; overflow-y:auto; margin:0; padding-left:20px; color:#991b1b;">
-                ${detalle_rechazadas.map((d) =>
-                  `<li>${d.nombre || d.documento || 'Sin nombre'} - <b>${d.estado || '?'}</b>: ${d.motivo || ''}</li>`
-                ).join('')}
-              </ul>
-            </div>`
-          : '';
-
-        const htmlErrores = errores && errores.length > 0
-          ? `
-            <div style="text-align:left; margin-top:16px;">
-              <p style="color:#dc2626; font-weight:bold; margin:0 0 8px 0; font-size:14px;">
-                <i class="fas fa-bug"></i>
-                Errores (${filas_con_error})
-              </p>
-              <ul style="font-size:12px; max-height:150px; overflow-y:auto; margin:0; padding-left:20px;">
-                ${errores.slice(0, 10).map((e) =>
-                  `<li>Fila ${e.fila || '?'}: ${e.mensaje || JSON.stringify(e)}</li>`
-                ).join('')}
-              </ul>
-            </div>`
-          : '';
-
-        let icono = 'success';
-        if (filas_rechazadas > 0 || filas_con_error > 0) icono = 'warning';
-        if (filas_insertadas === 0 && filas_rechazadas > 0) icono = 'error';
 
         Swal.fire({
           title: '📊 Resultado de la carga',
@@ -215,27 +175,24 @@ const VerFichas = () => {
             <div style="text-align:left;">
               <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <div style="flex:1; background:#f0fdf4; padding:12px; border-radius:8px; text-align:center; border:1px solid #bbf7d0;">
-                  <div style="font-size:22px; font-weight:bold; color:#047857;">${filas_insertadas}</div>
+                  <div style="font-size:22px; font-weight:bold; color:#047857;">${respuesta.filas_insertadas || 0}</div>
                   <div style="font-size:11px; color:#065f46; text-transform:uppercase;">✅ Cargados</div>
                 </div>
                 <div style="flex:1; background:#fef3c7; padding:12px; border-radius:8px; text-align:center; border:1px solid #fcd34d;">
-                  <div style="font-size:22px; font-weight:bold; color:#d97706;">${filas_con_advertencia}</div>
+                  <div style="font-size:22px; font-weight:bold; color:#d97706;">${respuesta.filas_con_advertencia || 0}</div>
                   <div style="font-size:11px; color:#92400e; text-transform:uppercase;">⚠️ Advertencia</div>
                 </div>
                 <div style="flex:1; background:#fee2e2; padding:12px; border-radius:8px; text-align:center; border:1px solid #fecaca;">
-                  <div style="font-size:22px; font-weight:bold; color:#dc2626;">${filas_rechazadas}</div>
+                  <div style="font-size:22px; font-weight:bold; color:#dc2626;">${respuesta.filas_rechazadas || 0}</div>
                   <div style="font-size:11px; color:#991b1b; text-transform:uppercase;">❌ Rechazados</div>
                 </div>
               </div>
               <p style="text-align:center; font-size:12px; color:#6b7280; margin:0 0 4px 0;">
-                Total filas procesadas: <b>${total_filas}</b>
+                Total filas procesadas: <b>${respuesta.total_filas || 0}</b>
               </p>
-              ${htmlAdvertencias}
-              ${htmlRechazados}
-              ${htmlErrores}
             </div>
           `,
-          icon: icono,
+          icon: 'success',
           confirmButtonColor: '#3ca203',
           confirmButtonText: 'Aceptar',
           width: '620px',
@@ -334,7 +291,6 @@ const VerFichas = () => {
         if (!numero_ficha) { Swal.showValidationMessage('⚠️ Número obligatorio'); return false; }
         if (!fecha_inicio || !fecha_fin) { Swal.showValidationMessage('⚠️ Fechas obligatorias'); return false; }
         if (new Date(fecha_fin) < new Date(fecha_inicio)) { Swal.showValidationMessage('⚠️ Fecha fin no puede ser anterior a fecha inicio'); return false; }
-        if (fichas.some((f) => f.numero_ficha === numero_ficha)) { Swal.showValidationMessage(`⚠️ La ficha ${numero_ficha} ya existe`); return false; }
 
         return { programa_id, numero_ficha, nivel, jornada, fecha_inicio, fecha_fin, aprendices_esperados };
       },
@@ -442,7 +398,7 @@ const VerFichas = () => {
         <div>
           <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>Centro de Fichas</h2>
           <p style={{ color: '#6b7280', margin: '5px 0 0 0' }}>
-            Gestión de todas las fichas del sistema ({fichas.length} fichas).
+            Gestión de todas las fichas del sistema ({filas.length} registros).
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -486,7 +442,7 @@ const VerFichas = () => {
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
         <input
           type="text"
-          placeholder="Buscar por código o programa..."
+          placeholder="Buscar por código, programa, nombre o documento..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -508,67 +464,99 @@ const VerFichas = () => {
         </div>
       ) : (
         <div style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #e5e7eb', overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', whiteSpace: 'nowrap' }}>
             <thead>
-              <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                <th style={{ textAlign: 'left', padding: '12px', color: '#6b7280' }}>Grupo- Ficha</th>
-                <th style={{ textAlign: 'left', padding: '12px', color: '#6b7280' }}>Programa Formación</th>
-                <th style={{ textAlign: 'left', padding: '12px', color: '#6b7280' }}>Nivel Formación</th>
-                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280' }}>Aprendices</th>
-                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280' }}>Fecha Ini EP Grupo</th>
-                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280' }}>Fecha Fin Grupo</th>
-                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280' }}>Estado</th>
-                <th style={{ textAlign: 'center', padding: '12px', color: '#6b7280' }}>Acciones</th>
+              <tr style={{ background: '#fef08a', color: '#1f2937', fontWeight: 'bold', borderBottom: '2px solid #e5e7eb' }}>
+                <th style={{ textAlign: 'left', padding: '10px' }}>Programa Formación</th>
+                <th style={{ textAlign: 'left', padding: '10px' }}>Grupo - Ficha</th>
+                <th style={{ textAlign: 'center', padding: '10px' }}>Fecha Ini Grupo</th>
+                <th style={{ textAlign: 'center', padding: '10px' }}>Fecha Ini EP Grupo</th>
+                <th style={{ textAlign: 'center', padding: '10px' }}>Duración</th>
+                <th style={{ textAlign: 'center', padding: '10px' }}>Fecha Fin Grupo</th>
+                <th style={{ textAlign: 'left', padding: '10px' }}>Nivel Formación</th>
+                <th style={{ textAlign: 'left', padding: '10px' }}>Modalidad</th>
+                <th style={{ textAlign: 'left', padding: '10px' }}>Tipo Documento</th>
+                <th style={{ textAlign: 'left', padding: '10px' }}>Documento</th>
+                <th style={{ textAlign: 'left', padding: '10px' }}>Nombre Completo</th>
+                <th style={{ textAlign: 'left', padding: '10px' }}>Correo</th>
+                <th style={{ textAlign: 'center', padding: '10px' }}>RAPs Lectiva Pendientes</th>
+                <th style={{ textAlign: 'center', padding: '10px' }}>% RAPs</th>
+                <th style={{ textAlign: 'left', padding: '10px' }}>Estado Registro</th>
+                <th style={{ textAlign: 'left', padding: '10px' }}>Alternativa Etapa Productiva</th>
+                <th style={{ textAlign: 'center', padding: '10px' }}>Estado Alternativa</th>
+                <th style={{ textAlign: 'center', padding: '10px' }}>Fecha Ini Alternativa</th>
+                <th style={{ textAlign: 'center', padding: '10px' }}>Fecha Fin Alternativa</th>
+                <th style={{ textAlign: 'center', padding: '10px' }}>Fecha Inicio Contrato</th>
+                <th style={{ textAlign: 'center', padding: '10px' }}>Fecha Fin Contrato</th>
+                <th style={{ textAlign: 'center', padding: '10px' }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filteredFichas.map((f) => (
-                <tr key={f.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td style={{ padding: '12px', fontWeight: 'bold', color: '#3ca203' }}>{f.numero_ficha}</td>
-                  <td style={{ padding: '12px' }}>{getNombrePrograma(f.programa_id)}</td>
-                  <td style={{ padding: '12px' }}>{f.nivel || 'N/A'}</td>
-                  <td style={{ textAlign: 'center', padding: '12px' }}>{f.aprendices_esperados || 0}</td>
-                  <td style={{ textAlign: 'center', padding: '12px' }}>{formatearFecha(f.fecha_inicio)}</td>
-                  <td style={{ textAlign: 'center', padding: '12px' }}>{formatearFecha(f.fecha_fin)}</td>
-                  <td style={{ textAlign: 'center', padding: '12px' }}>
+              {filteredFichas.map(({ f, p }, index) => {
+                const doc = separarDocumento(p?.aprendiz_documento);
+                const estadoP = p?.estado || null;
+                return (
+                <tr key={`${f.id}-${p?.id || 'sin-aprendiz'}-${index}`} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                  <td style={{ padding: '10px' }}>{p?.programa_nombre || getNombrePrograma(f.programa_id)}</td>
+                  <td style={{ padding: '10px', fontWeight: 'bold', color: '#3ca203' }}>{f.numero_ficha || '-'}</td>
+                  <td style={{ textAlign: 'center', padding: '10px' }}>{formatearFecha(f.fecha_inicio)}</td>
+                  <td style={{ textAlign: 'center', padding: '10px' }}>{formatearFecha(p?.fecha_inicio)}</td>
+                  <td style={{ textAlign: 'center', padding: '10px' }}>{calcularDuracion(p?.fecha_inicio, p?.fecha_fin)}</td>
+                  <td style={{ textAlign: 'center', padding: '10px' }}>{formatearFecha(f.fecha_fin)}</td>
+                  <td style={{ padding: '10px' }}>{f.nivel || '-'}</td>
+                  <td style={{ padding: '10px' }}>{p?.modalidad_nombre || '-'}</td>
+                  <td style={{ padding: '10px' }}>{doc.tipo}</td>
+                  <td style={{ padding: '10px' }}>{doc.numero}</td>
+                  <td style={{ padding: '10px', fontWeight: '500' }}>{p?.aprendiz_nombre || 'Sin aprendiz'}</td>
+                  <td style={{ padding: '10px' }}>{p?.aprendiz_email || '-'}</td>
+                  <td style={{ textAlign: 'center', padding: '10px' }}>{p?.raps_pendientes ?? '-'}</td>
+                  <td style={{ textAlign: 'center', padding: '10px' }}>{p?.porcentaje_raps != null ? `${p.porcentaje_raps}%` : '-'}</td>
+                  <td style={{ padding: '10px' }}>{estadoP || '-'}</td>
+                  <td style={{ padding: '10px' }}>{p?.modalidad_nombre || 'Sin definir'}</td>
+                  <td style={{ textAlign: 'center', padding: '10px' }}>
                     <span
                       style={{
-                        background: f.is_active ? '#d1fae5' : '#f3f4f6',
-                        color: f.is_active ? '#047857' : '#6b7280',
-                        padding: '4px 12px',
+                        background: estadoP === 'ACTIVO' ? '#d1fae5' : '#f3f4f6',
+                        color: estadoP === 'ACTIVO' ? '#047857' : '#6b7280',
+                        padding: '4px 10px',
                         borderRadius: '20px',
-                        fontSize: '12px',
+                        fontSize: '11px',
                         fontWeight: 'bold',
                       }}
                     >
-                      {f.is_active ? 'Activa' : 'Inactiva'}
+                      {estadoP || (f.is_active ? 'Activa' : 'Inactiva')}
                     </span>
                   </td>
-                  <td style={{ textAlign: 'center', padding: '12px' }}>
+                  <td style={{ textAlign: 'center', padding: '10px' }}>{formatearFecha(p?.fecha_inicio)}</td>
+                  <td style={{ textAlign: 'center', padding: '10px' }}>{formatearFecha(p?.fecha_fin)}</td>
+                  <td style={{ textAlign: 'center', padding: '10px' }}>{p?.fecha_inicio_contrato ? formatearFecha(p.fecha_inicio_contrato) : '-'}</td>
+                  <td style={{ textAlign: 'center', padding: '10px' }}>{p?.fecha_fin_contrato ? formatearFecha(p.fecha_fin_contrato) : '-'}</td>
+                  <td style={{ textAlign: 'center', padding: '10px', whiteSpace: 'nowrap' }}>
                     <button
-                      onClick={() => navigate(`/coordinador/ficha-completa/${f.id}?modo=parametrizacion`)}
-                      style={{ background: '#e6f7ed', color: '#047857', border: 'none', padding: '4px 12px', borderRadius: '6px', cursor: 'pointer', marginRight: '5px' }}
+                      onClick={() => navigate(`/coordinador/ficha-completa/${f.id || f.ficha_id}?modo=parametrizacion`)}
+                      style={{ background: '#e6f7ed', color: '#047857', border: 'none', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', marginRight: '5px', fontSize: '12px' }}
                     >
                       <i className="fas fa-eye" /> Ver
                     </button>
-                    {f.is_active ? (
+                    {f.is_active !== false ? (
                       <button
                         onClick={() => handleDesactivarManual(f)}
-                        style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '4px 12px', borderRadius: '6px', cursor: 'pointer' }}
+                        style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
                       >
                         <i className="fas fa-pause-circle" /> Desactivar
                       </button>
                     ) : (
                       <button
                         onClick={() => handleActivarManual(f)}
-                        style={{ background: '#d1fae5', color: '#047857', border: 'none', padding: '4px 12px', borderRadius: '6px', cursor: 'pointer' }}
+                        style={{ background: '#d1fae5', color: '#047857', border: 'none', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
                       >
                         <i className="fas fa-play-circle" /> Activar
                       </button>
                     )}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
