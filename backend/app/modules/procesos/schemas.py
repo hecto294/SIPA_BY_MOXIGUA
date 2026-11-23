@@ -65,6 +65,10 @@ class ProcesoOut(BaseModel):
     nota_empresa: Optional[float] = None
     nota_instructor: Optional[float] = None
     observaciones: Optional[str] = None
+    raps_pendientes: Optional[int] = None
+    porcentaje_raps: Optional[float] = None
+    fecha_inicio_contrato: Optional[date] = None
+    fecha_fin_contrato: Optional[date] = None
     is_active: bool
     created_at: datetime
     updated_at: datetime

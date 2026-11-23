@@ -1,12 +1,12 @@
 from sqlalchemy import (
-    Column, BigInteger, String, Text, Boolean, DateTime, Date, 
+    Column, BigInteger, String, Text, Boolean, DateTime, Date,
     Numeric, ForeignKey, CheckConstraint, UniqueConstraint,
     JSON, Integer, Index
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
-from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.dialects.postgresql import ENUM, JSONB
 from enum import Enum
 
 
@@ -31,10 +31,13 @@ class TipoCharla(str, Enum):
 
 class EstadoProceso(str, Enum):
     ACTIVO = "ACTIVO"
-    CONDICIONADO = "CONDICIONADO"  # 🔥 NUEVO
+    CONDICIONADO = "CONDICIONADO"
     FINALIZADO = "FINALIZADO"
     APLAZADO = "APLAZADO"
     RETIRADO = "RETIRADO"
+    # Valor heredado de la BD (no se puede eliminar de un ENUM de PostgreSQL).
+    # Se declara aquí para que ORM y BD coincidan y autogenerate no lo proponga.
+    CANCELADO = "CANCELADO"
 
 class EstadoSofia(str, Enum):
     PENDIENTE = "PENDIENTE"
@@ -79,7 +82,6 @@ class EstadoCorreoDesercion(str, Enum):
     PENDIENTE = "PENDIENTE"
     NO_APLICA = "NO_APLICA"
 
-# 🔥 ENUMS DE ALERTAS
 class TipoAlerta(str, Enum):
     INFO = "INFO"
     ADVERTENCIA = "ADVERTENCIA"
@@ -101,7 +103,6 @@ class EstadoAlerta(str, Enum):
     RESUELTA = "RESUELTA"
     ARCHIVADA = "ARCHIVADA"
 
-# 🔥 ENUM DE CARTAS DE PRESENTACIÓN
 class EstadoCartaPresentacion(str, Enum):
     CARGADA = "CARGADA"
     APROBADA = "APROBADA"
@@ -141,7 +142,9 @@ class Usuario(Base):
     telefono = Column(String(20))
     rol_id = Column(BigInteger, ForeignKey("etapa_productiva.roles.id"), nullable=False)
     avatar_url = Column(String(500), nullable=True)
-    preferencias_ui = Column(JSON, nullable=False, server_default='{}')
+    # JSONB (no JSON): el baseline creó la columna como JSONB.
+    # JSONB es indexable con GIN y más rápido en lectura; no degradamos la BD.
+    preferencias_ui = Column(JSONB, nullable=False, server_default='{}')
     is_active = Column(Boolean, default=True, nullable=False)
     reset_code = Column(String(6), nullable=True)
     reset_code_expires_at = Column(DateTime(timezone=True), nullable=True)
@@ -151,7 +154,38 @@ class Usuario(Base):
     rol = relationship("Rol", foreign_keys=[rol_id])
 
 
-# 🔥 NUEVO - Centro de Formación
+class UsuarioRol(Base):
+    """Tabla puente N:M de usuarios y roles (legado).
+
+    Existe en la BD desde el baseline pero no tenía modelo ORM.
+    Sin esta clase, ``alembic revision --autogenerate`` propondría
+    ``DROP TABLE usuario_roles`` (que el filtro de ``env.py`` bloquearía).
+    El flujo actual de auth usa ``usuarios.rol_id``; esta tabla queda
+    disponible para una futura funcionalidad de multi-rol.
+    """
+    __tablename__ = "usuario_roles"
+    __table_args__ = (
+        UniqueConstraint("usuario_id", "rol_id", name="uq_usuario_roles"),
+        {"schema": "etapa_productiva"},
+    )
+    id = Column(BigInteger, primary_key=True)
+    usuario_id = Column(
+        BigInteger,
+        ForeignKey("etapa_productiva.usuarios.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    rol_id = Column(
+        BigInteger,
+        ForeignKey("etapa_productiva.roles.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    fecha_asignacion = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    deleted_at = Column(DateTime(timezone=True))
+
+
 class CentroFormacion(Base):
     __tablename__ = "centros_formacion"
     __table_args__ = {"schema": "etapa_productiva"}
@@ -201,6 +235,8 @@ class Ficha(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     deleted_at = Column(DateTime(timezone=True))
+
+    programa = relationship("ProgramaFormacion", foreign_keys=[programa_id])
 
 
 class AsignacionInstructorFicha(Base):
@@ -298,11 +334,15 @@ class ProcesoEtapaProductiva(Base):
     instructor_id = Column(BigInteger, ForeignKey("etapa_productiva.usuarios.id"), nullable=False)
     fecha_inicio = Column(Date, nullable=False)
     fecha_fin = Column(Date, nullable=False)
-    estado = Column(ENUM('ACTIVO', 'CONDICIONADO', 'FINALIZADO', 'APLAZADO', 'RETIRADO', name='estado_proceso_t', schema='etapa_productiva'), default='ACTIVO')
+    estado = Column(ENUM('ACTIVO', 'CONDICIONADO', 'FINALIZADO', 'APLAZADO', 'RETIRADO', 'CANCELADO', name='estado_proceso_t', schema='etapa_productiva'), default='ACTIVO')
     estado_sofia = Column(ENUM('PENDIENTE', 'POR_EVALUAR', 'APROBADO', 'NO_APROBADO', name='estado_sofia_t', schema='etapa_productiva'), default='PENDIENTE')
     nota_empresa = Column(Numeric(3, 1))
     nota_instructor = Column(Numeric(3, 1))
     observaciones = Column(Text)
+    raps_pendientes = Column(Integer, nullable=True)
+    porcentaje_raps = Column(Numeric(5, 2), nullable=True)
+    fecha_inicio_contrato = Column(Date, nullable=True)
+    fecha_fin_contrato = Column(Date, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -351,6 +391,12 @@ class ProcesoEtapaProductiva(Base):
     @property
     def modalidad_nombre(self) -> str | None:
         return self.modalidad.nombre if self.modalidad else None
+
+    @property
+    def programa_nombre(self) -> str | None:
+        if self.ficha and self.ficha.programa:
+            return self.ficha.programa.nombre
+        return None
 
     @property
     def centro_formacion_codigo(self) -> str | None:
@@ -546,10 +592,6 @@ class Auditoria(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-# ============================================================
-# ALERTAS
-# ============================================================
-
 class Alerta(Base):
     __tablename__ = "alertas"
     __table_args__ = {"schema": "etapa_productiva"}
@@ -597,10 +639,6 @@ class Alerta(Base):
     aprendiz = relationship("Usuario", foreign_keys=[aprendiz_id])
     resuelta_por = relationship("Usuario", foreign_keys=[resuelta_por_id])
 
-
-# ============================================================
-# CARTAS DE PRESENTACIÓN
-# ============================================================
 
 class CartaPresentacion(Base):
     __tablename__ = "cartas_presentacion"

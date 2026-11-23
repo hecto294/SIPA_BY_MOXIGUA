@@ -33,12 +33,14 @@ const handleResponse = async (response) => {
   return response.json();
 };
 
-const getHeaders = (customHeaders = {}) => {
+const getHeaders = (customHeaders = {}, isFormData = false) => {
   const token = getToken();
   const headers = {
     'Content-Type': 'application/json',
     ...customHeaders,
   };
+  // Con FormData el navegador pone el Content-Type (con el boundary) por sí solo
+  if (isFormData) delete headers['Content-Type'];
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -68,10 +70,11 @@ export const apiClient = {
 
   post: async (endpoint, data = {}, options = {}) => {
     const url = buildUrl(endpoint, options.params);
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
     const response = await fetch(url, {
       method: 'POST',
-      headers: getHeaders(options.headers),
-      body: JSON.stringify(data),
+      headers: getHeaders(options.headers, isFormData),
+      body: isFormData ? data : JSON.stringify(data),
     });
     return handleResponse(response);
   },
