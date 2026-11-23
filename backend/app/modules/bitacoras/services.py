@@ -63,3 +63,34 @@ async def guardar_evidencia_archivo(
     db.commit()
     db.refresh(evidencia)
     return evidencia
+
+
+async def guardar_evidencia_enlace(
+    db: Session,
+    enlace_url: str,
+    uploaded_by: Optional[int] = None,
+    tipo_documento: Optional[str] = None,
+) -> EvidenciaArchivo:
+    """
+    Guarda un enlace como evidencia (sin archivo físico).
+    RF-065: Aceptar un enlace al documento de soporte.
+    """
+    if not enlace_url or not enlace_url.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El enlace no puede estar vacío",
+        )
+
+    evidencia = EvidenciaArchivo(
+        nombre_archivo=f"Enlace: {enlace_url[:50]}...",
+        ruta_objeto=enlace_url,
+        enlace_url=enlace_url,
+        mime_type="text/uri-list",
+        tamano_bytes=0,
+        tipo_documento=tipo_documento,
+        uploaded_by=uploaded_by,
+    )
+    db.add(evidencia)
+    db.commit()
+    db.refresh(evidencia)
+    return evidencia

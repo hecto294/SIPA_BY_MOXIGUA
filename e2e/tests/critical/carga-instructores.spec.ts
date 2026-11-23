@@ -11,7 +11,7 @@ test.describe('Flujo crítico 2: Carga de instructores', () => {
     // Login como coordinador/admin
     await page.goto('/login');
     await page.getByLabel(/correo|email/i).fill('usuario4@test.com');
-    await page.getByLabel(/contraseña|password/i).fill('Test1234');
+    await page.getByLabel(/contraseña|password/i).fill('password123');
     await page.locator('button.btn-login-submit').click();
     await expect(page).not.toHaveURL(/login/);
   });

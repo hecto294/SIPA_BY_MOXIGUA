@@ -30,6 +30,14 @@ const SidebarAdmin = ({ onNavigate, activePage }) => {
           >
             <i className="fas fa-layer-group"></i> Gestión de Fichas
           </li>
+          {/* 🔥 6. Modalidades EP (NUEVO RF-077) */}
+          <li 
+            className={activePage === 'modalidades' ? 'active' : ''} 
+            onClick={() => onNavigate('/admin/modalidades', 'modalidades')}
+          >
+            <i className="fas fa-tasks"></i> Modalidades EP
+          </li>
+
 
           {/* 4. Reportes Globales */}
           <li 

@@ -1,4 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse, RedirectResponse
+from pathlib import Path
+from urllib.parse import urlparse
+from fastapi import status, Query
 from sqlalchemy.orm import Session
 from typing import Optional, List
 
@@ -323,3 +327,90 @@ def delete_bitacora(
     bitacora.is_active = False
     db.commit()
     return {"message": "Bitácora eliminada exitosamente"}
+
+
+@router.post("/{bitacora_id}/evidencias/enlace", status_code=status.HTTP_201_CREATED)
+async def subir_evidencia_enlace(
+    bitacora_id: int,
+    enlace_url: str,
+    tipo_documento: Optional[str] = "Documento de soporte",
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(Roles.COORDINADOR, Roles.INSTRUCTOR)),
+):
+    """
+    RF-065: Aceptar un enlace al documento de soporte-HEC.
+    Guarda un enlace (URL) como evidencia sin subir archivo físico.
+    """
+    # RF-065: el enlace debe ser una URL http(s) válida
+    enlace_url = (enlace_url or "").strip()
+    partes = urlparse(enlace_url)
+    if len(enlace_url) > 500 or partes.scheme not in ("http", "https") or not partes.netloc:
+        raise HTTPException(
+            status_code=400,
+            detail="El enlace debe ser una URL válida que empiece con http:// o https:// (máximo 500 caracteres)",
+        )
+
+    # Validar que la bitácora exista
+    bitacora = db.query(Bitacora).filter(Bitacora.id == bitacora_id, Bitacora.is_active == True).first()
+    if not bitacora:
+        raise HTTPException(status_code=404, detail="Bitácora no encontrada")
+
+    # Crear la evidencia con el enlace
+    evidencia = EvidenciaArchivo(
+        nombre_archivo=f"Enlace: {enlace_url[:50]}...",
+        ruta_objeto=enlace_url,
+        enlace_url=enlace_url,
+        mime_type="text/uri-list",
+        tamano_bytes=0,
+        tipo_documento=tipo_documento,
+        uploaded_by=current_user.id,
+    )
+    db.add(evidencia)
+    db.flush() # Para obtener el ID
+
+    # Vincular la evidencia a la bitácora
+    rel = BitacoraEvidencia(
+        bitacora_id=bitacora_id,
+        evidencia_archivo_id=evidencia.id,
+        is_active=True,
+    )
+    db.add(rel)
+    db.commit()
+    db.refresh(evidencia)
+
+    return {
+        "message": "Enlace registrado correctamente",
+        "evidencia_id": evidencia.id,
+        "enlace_url": enlace_url,
+    }
+
+
+@router.get("/evidencias/{evidencia_id}/descargar")
+async def descargar_evidencia(
+    evidencia_id: int,
+    inline: bool = False,
+    db: Session = Depends(get_db),
+):
+    """
+    RF-083: Descargar los archivos de una bitácora.
+    Sirve el archivo físico almacenado en el servidor.
+    """
+    evidencia = db.query(EvidenciaArchivo).filter(EvidenciaArchivo.id == evidencia_id).first()
+    if not evidencia:
+        raise HTTPException(status_code=404, detail="Evidencia no encontrada")
+
+    # Si es un enlace (RF-065), redirigir a la URL
+    if evidencia.enlace_url:
+        return RedirectResponse(url=evidencia.enlace_url)
+
+    # Si es un archivo físico, servirlo
+    ruta_archivo = Path(evidencia.ruta_objeto)
+    if not ruta_archivo.exists():
+        raise HTTPException(status_code=404, detail="El archivo físico no existe en el servidor")
+
+    return FileResponse(
+        path=ruta_archivo,
+        filename=evidencia.nombre_archivo,
+        media_type=evidencia.mime_type or 'application/octet-stream',
+        content_disposition_type="inline" if inline else "attachment",
+    )

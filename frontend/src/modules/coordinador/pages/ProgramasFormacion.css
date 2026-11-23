@@ -1,0 +1,48 @@
+.programas-container { padding: 0 4px; }
+
+.programas-header {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: 16px; margin: 24px 0 18px; flex-wrap: wrap;
+}
+.programas-header h2 { margin: 0; font-size: 28px; }
+.programas-header .subtitulo { margin: 6px 0 0; color: #6b7280; }
+
+.btn-nuevo-programa {
+  background: #3ca203; color: #fff; border: none; padding: 12px 22px;
+  border-radius: 10px; font-weight: 600; font-size: 15px; font-family: inherit; cursor: pointer;
+}
+.btn-nuevo-programa:hover { background: #2f8002; }
+
+.programas-search { display: flex; gap: 10px; margin-bottom: 18px; }
+.programas-search input {
+  flex: 1; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 10px;
+  font-family: inherit; font-size: 14px;
+}
+.btn-buscar, .btn-limpiar {
+  border: none; padding: 0 20px; border-radius: 10px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+}
+.btn-buscar { background: #3ca203; color: #fff; }
+.btn-limpiar { background: #e5e7eb; color: #374151; }
+
+.programas-table-wrapper {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 16px 24px; overflow-x: auto;
+}
+.programas-table { width: 100%; border-collapse: collapse; }
+.programas-table th {
+  text-align: left; padding: 14px 12px; background: #f9fafb; color: #6b7280;
+  font-size: 14px; border-bottom: 2px solid #e5e7eb;
+}
+.programas-table td { padding: 14px 12px; border-bottom: 1px solid #f0f0f0; }
+.programa-codigo { color: #3ca203; font-weight: 700; }
+.programa-desc { max-width: 320px; color: #6b7280; font-size: 13px; }
+.programa-estado { color: #065f46; font-weight: 700; font-size: 13px; }
+
+.btn-prog-editar, .btn-prog-eliminar {
+  border: none; padding: 7px 14px; border-radius: 8px; cursor: pointer;
+  font-size: 13px; font-weight: 600; font-family: inherit; margin-left: 6px;
+}
+.btn-prog-editar { background: #e0f2fe; color: #0ea5e9; }
+.btn-prog-editar:hover { background: #bae6fd; }
+.btn-prog-eliminar { background: #fee2e2; color: #dc2626; }
+.btn-prog-eliminar:hover { background: #fecaca; }

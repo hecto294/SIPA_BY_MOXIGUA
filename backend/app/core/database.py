@@ -27,7 +27,7 @@ def get_current_user_id() -> Optional[int]:
 engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True,
-    echo=settings.DEBUG if hasattr(settings, "DEBUG") else False,
+    echo=False,
 )
 
 SessionLocal = sessionmaker(

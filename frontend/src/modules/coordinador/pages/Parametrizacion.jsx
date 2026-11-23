@@ -15,6 +15,13 @@ const Parametrizacion = () => {
       icono: 'fa-layer-group', 
       ruta: '/coordinador/fichas-parametrizacion'
     },
+    {
+      id: 5,
+      titulo: 'Programas',
+      descripcion: 'Crea, edita y elimina programas de formación',
+      icono: 'fa-book',
+      ruta: '/coordinador/programas'
+    },
     { 
       id: 2, 
       titulo: 'Empresas', 
@@ -54,7 +61,7 @@ const Parametrizacion = () => {
       </div>
 
       {/* TARJETAS DE PARAMETRIZACIÓN */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
         {cards.map((card) => (
           <div
             key={card.id}

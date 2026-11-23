@@ -1,4 +1,5 @@
 // src/modules/coordinador/pages/DashboardCoordinador.jsx
+import GestionModalidades from '@/modules/shared/pages/GestionModalidades';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dashboardService } from '@/core/services/dashboardService';
