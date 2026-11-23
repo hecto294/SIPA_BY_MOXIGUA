@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { jsPDF } from 'jspdf';
 import { apiClient } from '@/core/api/client';
+import { bitacoraService } from '@/core/services/bitacoraService';
 import { validarPdf } from '@/core/utils/validarPdf';
 import './MisBitacoras.css';
 
@@ -202,6 +203,7 @@ const MisBitacoras = () => {
       descripcion: b.titulo || b.contenido || 'Sin descripción',
       observacion: b.instructor_retroalimentacion || null,
       evidencias: (b.archivos || []).map(a => ({
+        id: a.id,
         nombre: a.nombre,
         titulo: b.titulo,
         contenido: b.contenido || '',
@@ -602,7 +604,7 @@ const MisBitacoras = () => {
                   <i class="fas fa-eye"></i> Ver
                 </button>
                 <button 
-                  onclick="window.descargarPDFSimulado('${ev.titulo}', '${(ev.contenido || '').replace(/'/g, "\\'")}', '${ev.fecha}', '${ev.nombre}')"
+                  onclick="window.descargarEvidenciaReal(${ev.id || 'null'}, '${(ev.nombre || '').replace(/'/g, "\\'")}', '${ev.titulo}', '${(ev.contenido || '').replace(/'/g, "\\'")}', '${ev.fecha}')"
                   style="background: #3ca203; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;"
                 >
                   <i class="fas fa-download"></i> Descargar
@@ -636,6 +638,19 @@ const MisBitacoras = () => {
 
     window.descargarPDFSimulado = (titulo, contenido, fecha, nombreArchivo) => {
       descargarPDFSimulado(titulo, contenido, fecha, nombreArchivo);
+    };
+
+    window.descargarEvidenciaReal = async (id, nombre, titulo, contenido, fecha) => {
+      // Sin id = bitacora creada solo en pantalla (no guardada en el servidor)
+      if (!id) {
+        descargarPDFSimulado(titulo, contenido, fecha, nombre);
+        return;
+      }
+      try {
+        await bitacoraService.descargarEvidencia(id, nombre);
+      } catch (err) {
+        alert(err.message || 'No se pudo descargar el archivo');
+      }
     };
 
     Swal.fire({

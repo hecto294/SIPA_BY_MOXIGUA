@@ -32,6 +32,15 @@ services:
       FRONTEND_URL: "http://localhost:3000"
       ENVIRONMENT: "development"
       DEBUG: "true"
+      SMTP_HOST: ${SMTP_HOST:-host.docker.internal}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-sipa@sena.edu.co}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-false}
+      SMTP_USE_SSL: ${SMTP_USE_SSL:-false}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./backend/evidencias:/app/evidencias
       - ./backend/uploads:/app/uploads

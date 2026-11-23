@@ -52,10 +52,11 @@ export const authService = {
 
   isAuthenticated: () => !!localStorage.getItem('token'),
 
-  requestPasswordReset: async (email) => apiClient.post(API_ENDPOINTS.AUTH.REQUEST_RESET, { email }),
-  verifyResetCode: async (email, code) => apiClient.post(API_ENDPOINTS.AUTH.VERIFY_CODE, { email, code }),
-  resetPassword: async (email, code, newPassword) => apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { email, code, newPassword }),
-  changePassword: async (currentPassword, newPassword) => apiClient.post(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, { currentPassword, newPassword }),
+    requestPasswordReset: async (email) => apiClient.post(API_ENDPOINTS.AUTH.REQUEST_RESET, { email }),
+  verifyResetCode: async (email, code) => apiClient.post(API_ENDPOINTS.AUTH.VERIFY_CODE, { email, codigo: code }),
+  resetPassword: async (email, code, newPassword) => apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { email, codigo: code, nueva_password: newPassword }),
+  resendVerificationCode: async (email) => apiClient.post(API_ENDPOINTS.AUTH.RESEND_CODE, { email }),
+  changePassword: async (currentPassword, newPassword) => apiClient.post(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, { password_actual: currentPassword, password_nueva: newPassword }),
 };
 
 export default authService;
