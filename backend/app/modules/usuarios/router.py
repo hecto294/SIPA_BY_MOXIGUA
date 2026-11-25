@@ -9,8 +9,18 @@ from datetime import datetime
 from app.core.database import get_db
 from app.core.security import get_current_user, require_admin, require_role
 from app.core.constants import Roles
-from app.models import Usuario, Rol
+from app.models import (
+    Usuario,
+    Rol,
+    Ficha,
+    ModalidadEP,
+    AsignacionInstructorFicha,
+    ProcesoEtapaProductiva,
+    EstadoProceso,
+    EstadoSofia,
+)
 from app.modules.usuarios import schemas, crud
+from app.modules.procesos import crud as procesos_crud
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
@@ -484,7 +494,126 @@ def get_usuarios(
     )
     return usuarios
 
+@router.post(
+    "/registrar-aprendiz",
+    response_model=schemas.RegistrarAprendizResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def registrar_aprendiz(
+    data: schemas.RegistrarAprendizRequest,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(Roles.ADMIN, Roles.COORDINADOR)),
+):
+    """Registra aprendiz + proceso de etapa productiva con ficha/jornada."""
+    if crud.get_usuario_by_email(db, data.email):
+        raise HTTPException(status_code=400, detail="El email ya está registrado")
 
+    if data.documento_identidad and crud.get_usuario_by_documento(db, data.documento_identidad):
+        raise HTTPException(status_code=400, detail="El documento ya está registrado")
+
+    ficha = db.query(Ficha).filter(Ficha.id == data.ficha_id, Ficha.is_active == True).first()
+    if not ficha:
+        raise HTTPException(status_code=404, detail="Ficha no encontrada o inactiva")
+
+    if data.jornada is not None and str(data.jornada).strip():
+        ficha.jornada = str(data.jornada).strip()
+        db.add(ficha)
+
+    instructor_id = data.instructor_id
+    if instructor_id is None:
+        asig = (
+            db.query(AsignacionInstructorFicha)
+            .filter(
+                AsignacionInstructorFicha.ficha_id == ficha.id,
+                AsignacionInstructorFicha.is_active == True,
+            )
+            .order_by(AsignacionInstructorFicha.id.desc())
+            .first()
+        )
+        if not asig:
+            raise HTTPException(
+                status_code=400,
+                detail="La ficha no tiene instructor asignado. Indica instructor_id.",
+            )
+        instructor_id = asig.instructor_id
+
+    instructor = db.query(Usuario).filter(
+        Usuario.id == instructor_id,
+        Usuario.rol_id == Roles.INSTRUCTOR,
+        Usuario.is_active == True,
+    ).first()
+    if not instructor:
+        raise HTTPException(status_code=400, detail="Instructor no válido o inactivo")
+
+    modalidad_id = data.modalidad_id
+    if modalidad_id is None:
+        modalidad = (
+            db.query(ModalidadEP)
+            .filter(ModalidadEP.is_active == True)
+            .order_by(ModalidadEP.id.asc())
+            .first()
+        )
+        if not modalidad:
+            raise HTTPException(status_code=400, detail="No hay modalidades activas. Indica modalidad_id.")
+        modalidad_id = modalidad.id
+    else:
+        modalidad = db.query(ModalidadEP).filter(
+            ModalidadEP.id == modalidad_id, ModalidadEP.is_active == True
+        ).first()
+        if not modalidad:
+            raise HTTPException(status_code=404, detail="Modalidad no encontrada")
+
+    fecha_inicio = data.fecha_inicio or ficha.fecha_inicio
+    fecha_fin = data.fecha_fin or ficha.fecha_fin
+    if fecha_fin < fecha_inicio:
+        raise HTTPException(status_code=400, detail="fecha_fin debe ser >= fecha_inicio")
+
+    usuario_data = {
+        "nombre": data.nombre,
+        "apellido": data.apellido,
+        "email": data.email,
+        "password": data.password,
+        "rol_id": Roles.APRENDIZ,
+        "tipo_documento": data.tipo_documento,
+        "documento_identidad": data.documento_identidad,
+        "telefono": data.telefono,
+    }
+    nuevo_usuario = crud.create_usuario(db, usuario_data)
+
+    try:
+        proceso_data = {
+            "aprendiz_id": nuevo_usuario.id,
+            "ficha_id": ficha.id,
+            "modalidad_id": modalidad_id,
+            "instructor_id": instructor_id,
+            "empresa_id": None,
+            "coordinador_empresa_id": None,
+            "fecha_inicio": fecha_inicio,
+            "fecha_fin": fecha_fin,
+            "estado": EstadoProceso.ACTIVO,
+            "estado_sofia": EstadoSofia.PENDIENTE,
+            "is_active": True,
+            "observaciones": f"Registrado por coordinador/admin id={current_user.id}",
+        }
+        nuevo_proceso = procesos_crud.create_proceso(db, proceso_data)
+    except Exception as e:
+        try:
+            crud.delete_usuario(db, nuevo_usuario)
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"No se pudo crear el proceso: {str(e)}")
+
+    db.refresh(nuevo_usuario)
+    db.refresh(ficha)
+
+    return schemas.RegistrarAprendizResponse(
+        usuario=nuevo_usuario,
+        proceso_id=nuevo_proceso.id,
+        ficha_id=ficha.id,
+        ficha_numero=ficha.numero_ficha,
+        jornada=ficha.jornada,
+        message="Aprendiz registrado y proceso creado correctamente",
+    )
 @router.get("/{usuario_id}", response_model=schemas.UsuarioOut)
 def get_usuario(
     usuario_id: int,
@@ -505,9 +634,14 @@ def get_usuario(
 def create_usuario(
     data: schemas.UsuarioCreate,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_role(Roles.ADMIN, Roles.COORDINADOR)),
 ):
-    """Crea un nuevo usuario"""
+    """Crea un nuevo usuario. Coordinador solo puede crear aprendices."""
+    if current_user.rol_id == Roles.COORDINADOR and data.rol_id != Roles.APRENDIZ:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="El coordinador solo puede registrar aprendices",
+        )
     existing_email = crud.get_usuario_by_email(db, data.email)
     if existing_email:
         raise HTTPException(

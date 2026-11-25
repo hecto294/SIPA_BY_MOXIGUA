@@ -3,7 +3,7 @@ Schemas Pydantic v2 para el mÃ³dulo de Usuarios.
 """
 from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, date
 import re
 
 
@@ -185,3 +185,49 @@ class BulkUploadResponse(BaseModel):
     message: str
     filename: str
     resultados: ResultadoBulkUpload
+# ============================================================
+# REGISTRO DE APRENDIZ (COORDINADOR)
+# ============================================================
+class RegistrarAprendizRequest(BaseModel):
+    nombre: str = Field(..., min_length=2, max_length=100)
+    apellido: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr
+    password: str = Field(..., min_length=8, max_length=128)
+    ficha_id: int
+    jornada: Optional[str] = Field(None, max_length=50)
+    instructor_id: Optional[int] = None
+    modalidad_id: Optional[int] = None
+    fecha_inicio: Optional[date] = None
+    fecha_fin: Optional[date] = None
+    tipo_documento: Optional[str] = None
+    documento_identidad: Optional[str] = Field(None, max_length=20)
+    telefono: Optional[str] = Field(None, max_length=20)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v):
+        return validar_fortaleza_password(v)
+
+    @field_validator("email")
+    @classmethod
+    def email_lower(cls, v):
+        return v.lower().strip() if isinstance(v, str) else v
+
+    @field_validator("tipo_documento")
+    @classmethod
+    def validate_tipo_documento(cls, v):
+        if v is None:
+            return v
+        permitidos = {"TI", "CC", "CE", "PTE"}
+        if v.upper() not in permitidos:
+            raise ValueError(f"tipo_documento debe ser uno de: {', '.join(permitidos)}")
+        return v.upper()
+
+
+class RegistrarAprendizResponse(BaseModel):
+    usuario: UsuarioOut
+    proceso_id: int
+    ficha_id: int
+    ficha_numero: Optional[str] = None
+    jornada: Optional[str] = None
+    message: str = "Aprendiz registrado y proceso creado correctamente"
