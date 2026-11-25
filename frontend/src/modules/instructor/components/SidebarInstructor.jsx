@@ -1,4 +1,3 @@
-// src/modules/instructor/components/SidebarInstructor.jsx
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import '../../shared/components/Sidebar.css';
@@ -8,11 +7,11 @@ const SidebarInstructor = ({ setActivePage }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ Detectar qué página está activa desde la URL
   const getActiveItem = () => {
     const path = location.pathname;
     if (path.includes('/dashboard')) return 'dashboard';
     if (path.includes('/fichas') && !path.includes('/ficha/')) return 'fichas';
+    if (path.includes('/aprendices')) return 'aprendices';
     if (path.includes('/ficha/')) return 'fichas';
     if (path.includes('/empresas')) return 'empresas';
     if (path.includes('/charlas-programadas')) return 'charlas-programadas';
@@ -27,7 +26,6 @@ const SidebarInstructor = ({ setActivePage }) => {
 
   const activeItem = getActiveItem();
 
-  // ✅ Navegar a la ruta específica
   const handleNavigation = (pageId, path) => {
     if (setActivePage) setActivePage(pageId);
     navigate(path);
@@ -42,32 +40,20 @@ const SidebarInstructor = ({ setActivePage }) => {
     <nav className="sidebar">
       <div className="sidebar-menu">
         <ul>
-          <li 
-            className={activeItem === 'dashboard' ? 'active' : ''} 
-            onClick={() => handleNavigation('dashboard', '/instructor/dashboard')}
-          >
+          <li className={activeItem === 'dashboard' ? 'active' : ''} onClick={() => handleNavigation('dashboard', '/instructor/dashboard')}>
             <i className="fas fa-home"></i> Dashboard
           </li>
-
-          <li 
-            className={activeItem === 'fichas' ? 'active' : ''} 
-            onClick={() => handleNavigation('fichas', '/instructor/fichas')}
-          >
+          <li className={activeItem === 'fichas' ? 'active' : ''} onClick={() => handleNavigation('fichas', '/instructor/fichas')}>
             <i className="fas fa-layer-group"></i> Mis Fichas
           </li>
-
-          <li 
-            className={activeItem === 'empresas' ? 'active' : ''} 
-            onClick={() => handleNavigation('empresas', '/instructor/empresas')}
-          >
+          <li className={activeItem === 'aprendices' ? 'active' : ''} onClick={() => handleNavigation('aprendices', '/instructor/aprendices')}>
+            <i className="fas fa-users"></i> Mis Aprendices
+          </li>
+          <li className={activeItem === 'empresas' ? 'active' : ''} onClick={() => handleNavigation('empresas', '/instructor/empresas')}>
             <i className="fas fa-building"></i> Empresas
           </li>
 
-          {/* CHARLAS */}
-          <li 
-            className={activeItem === 'charlas' ? 'active' : ''} 
-            onClick={() => toggleSubmenu('charlas', '/instructor/charlas-programadas')}
-          >
+          <li className={activeItem === 'charlas' ? 'active' : ''} onClick={() => toggleSubmenu('charlas', '/instructor/charlas-programadas')}>
             <i className="fas fa-comments"></i> Charlas
             <i className={`fas fa-chevron-down menu-arrow ${openMenu === 'charlas' ? 'rotate' : ''}`}></i>
           </li>
@@ -78,11 +64,7 @@ const SidebarInstructor = ({ setActivePage }) => {
             </ul>
           )}
 
-          {/* ALTERNATIVA */}
-          <li 
-            className={activeItem === 'alternativa' ? 'active' : ''} 
-            onClick={() => toggleSubmenu('alternativa', '/instructor/seleccion-alternativa')}
-          >
+          <li className={activeItem === 'alternativa' ? 'active' : ''} onClick={() => toggleSubmenu('alternativa', '/instructor/seleccion-alternativa')}>
             <i className="fas fa-exchange-alt"></i> Alternativa etapa productiva
             <i className={`fas fa-chevron-down menu-arrow ${openMenu === 'alternativa' ? 'rotate' : ''}`}></i>
           </li>
@@ -92,11 +74,7 @@ const SidebarInstructor = ({ setActivePage }) => {
             </ul>
           )}
 
-          {/* SEGUIMIENTO */}
-          <li 
-            className={activeItem === 'seguimiento' ? 'active' : ''} 
-            onClick={() => toggleSubmenu('seguimiento', '/instructor/momentos')}
-          >
+          <li className={activeItem === 'seguimiento' ? 'active' : ''} onClick={() => toggleSubmenu('seguimiento', '/instructor/momentos')}>
             <i className="fas fa-clipboard-list"></i> Seguimiento
             <i className={`fas fa-chevron-down menu-arrow ${openMenu === 'seguimiento' ? 'rotate' : ''}`}></i>
           </li>
@@ -108,11 +86,7 @@ const SidebarInstructor = ({ setActivePage }) => {
             </ul>
           )}
 
-          {/* REPORTES FINALES */}
-          <li 
-            className={activeItem === 'reportes-finales' ? 'active' : ''} 
-            onClick={() => handleNavigation('reportes-finales', '/instructor/reportes-finales')}
-          >
+          <li className={activeItem === 'reportes-finales' ? 'active' : ''} onClick={() => handleNavigation('reportes-finales', '/instructor/reportes-finales')}>
             <i className="fas fa-file-signature"></i> Reportes Finales
           </li>
         </ul>

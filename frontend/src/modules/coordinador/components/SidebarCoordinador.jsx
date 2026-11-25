@@ -110,6 +110,14 @@ const SidebarCoordinador = ({ onNavigate, activePage }) => {
           >
             <i className="fas fa-exchange-alt"></i> Subir Alternativa
           </li>
+          {/* 🔥 15. Modalidades EP (NUEVO RF-077) */}
+          <li 
+            className={activePage === 'modalidades' ? 'active' : ''} 
+            onClick={() => onNavigate('/coordinador/modalidades', 'modalidades')}
+          >
+            <i className="fas fa-tasks"></i> Modalidades EP
+          </li>
+
 
           {/* 🔥 14. Soportes (NUEVO) */}
           <li 

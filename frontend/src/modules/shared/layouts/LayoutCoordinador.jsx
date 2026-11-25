@@ -1,10 +1,11 @@
-﻿// src/modules/shared/layouts/LayoutCoordinador.jsx
+// src/modules/shared/layouts/LayoutCoordinador.jsx
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/modules/shared/components/Header';
 import SidebarCoordinador from '@/modules/coordinador/components/SidebarCoordinador';
 import '@/App.css';
 
+import GestionModalidades from '@/modules/shared/pages/GestionModalidades';
 import DashboardCoordinador from "@/modules/coordinador/pages/DashboardCoordinador";
 import VerFichas from "@/modules/coordinador/pages/VerFichas";
 import VerAprendices from "@/modules/coordinador/pages/VerAprendices";
@@ -23,6 +24,7 @@ import ReporteFichaDetalle from "@/modules/coordinador/pages/ReporteFichaDetalle
 import MomentosCoordinador from "@/modules/coordinador/pages/MomentosCoordinador";
 import MiPerfil from "@/modules/coordinador/pages/MiPerfil";
 import FichasParametrizacion from "@/modules/coordinador/pages/FichasParametrizacion";
+import ProgramasFormacion from "@/modules/coordinador/pages/ProgramasFormacion";
 import AprendicesFicha from "@/modules/coordinador/pages/AprendicesFicha";
 import ReporteBitacoras from "@/modules/coordinador/pages/ReporteBitacoras";
 import ReporteFichaBitacoras from "@/modules/coordinador/pages/ReporteFichaBitacoras";
@@ -67,7 +69,8 @@ const LayoutCoordinador = () => {
   else if (location.pathname.includes('/reporte-bitacoras')) activePage = 'reporte-bitacoras';
   else if (location.pathname.includes('/instructores-ep')) activePage = 'instructores-ep';
   else if (location.pathname.includes('/centros-formacion')) activePage = 'centros-formacion';
-  else if (location.pathname.includes('/soportes')) activePage = 'soportes'; // 🔥 NUEVO
+  else if (location.pathname.includes('/soportes')) activePage = 'soportes';
+  else if (location.pathname.includes('/modalidades')) activePage = 'modalidades'; // 🔥 NUEVO
   else if (location.pathname.includes('/empresas')) activePage = 'empresas';
   else if (location.pathname.includes('/aprendices')) activePage = 'aprendices';
   else if (location.pathname.includes('/instructores')) activePage = 'instructores';
@@ -111,10 +114,12 @@ const LayoutCoordinador = () => {
             <Route path="/momentos" element={<MomentosCoordinador />} />
             <Route path="/mi-perfil" element={<MiPerfil />} />
             <Route path="/fichas-parametrizacion" element={<FichasParametrizacion />} />
+            <Route path="/programas" element={<ProgramasFormacion />} />
             <Route path="/aprendices-ficha/:idFicha" element={<AprendicesFicha />} />
 
             {/* 🔥 Ruta de Soportes (NUEVO) */}
             <Route path="/soportes" element={<Soportes />} />
+            <Route path="/modalidades" element={<GestionModalidades />} />
           </Routes>
         </div>
       </div>

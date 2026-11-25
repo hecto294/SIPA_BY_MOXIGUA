@@ -47,34 +47,34 @@ const Fichas = () => {
               ? new Date(ficha.fecha_fin).toLocaleDateString('es-ES')
               : '—';
 
-            // 🔥 Calcular el estado con 4 posibilidades
-            const hoy = new Date();
-            hoy.setHours(0, 0, 0, 0);
-            const fi = ficha.fecha_inicio ? new Date(ficha.fecha_inicio) : null;
-            const ff = ficha.fecha_fin ? new Date(ficha.fecha_fin) : null;
+            // 🔥 Calcular el estado con 4 posibilidades (comparación por strings para evitar problemas de zona horaria)
+            const hoyStr = new Date().toISOString().split('T')[0];
+            const fiStr = ficha.fecha_inicio ? String(ficha.fecha_inicio).split('T')[0] : null;
+            const ffStr = ficha.fecha_fin ? String(ficha.fecha_fin).split('T')[0] : null;
 
             let estado = 'activa';
             let mensaje = 'Activa';
             let color = '#10b981';
 
-            if (fi && ff) {
-              if (hoy < fi) {
+            if (fiStr && ffStr) {
+              if (hoyStr < fiStr) {
                 // Futura → NO activa
                 estado = 'futura';
                 mensaje = `Se activará el ${fechaInicioStr}`;
                 color = '#6b7280';
-              } else if (hoy > ff) {
+              } else if (hoyStr > ffStr) {
                 // Ya terminó
                 estado = 'finalizada';
                 mensaje = `Finalizada el ${fechaFinStr}`;
                 color = '#ef4444';
               } else {
-                // Activa - verificar si está próxima a terminar
-                const diasRestantes = Math.ceil((ff - hoy) / (1000 * 60 * 60 * 24));
+                // Activa - calcular días restantes
+                const hoyMs = new Date(hoyStr).getTime();
+                const ffMs = new Date(ffStr).getTime();
+                const diasRestantes = Math.ceil((ffMs - hoyMs) / (1000 * 60 * 60 * 24));
                 console.log(`📅 Ficha ${ficha.numero_ficha}: ${diasRestantes} días restantes`);
 
                 if (diasRestantes <= 60) {
-                  // Menos de 2 meses → próxima a terminar
                   estado = 'proxima';
                   mensaje = `Próxima a terminar (${diasRestantes} días)`;
                   color = '#f59e0b';

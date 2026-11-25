@@ -14,6 +14,7 @@ import MiPerfil from '@/modules/admin/pages/MiPerfil';
 
 // 🔥 Soportes (NUEVO) - compartida con coordinador
 import Soportes from '@/modules/shared/pages/Novedades';
+import GestionModalidades from '@/modules/shared/pages/GestionModalidades';
 
 const LayoutAdmin = () => {
   const navigate = useNavigate();
@@ -27,7 +28,8 @@ const LayoutAdmin = () => {
   if (location.pathname.includes('/usuarios')) activePage = 'usuarios';
   else if (location.pathname.includes('/fichas')) activePage = 'fichas';
   else if (location.pathname.includes('/reportes')) activePage = 'reportes';
-  else if (location.pathname.includes('/soportes')) activePage = 'soportes'; // 🔥 NUEVO
+  else if (location.pathname.includes('/soportes')) activePage = 'soportes';
+  else if (location.pathname.includes('/modalidades')) activePage = 'modalidades'; // 🔥 NUEVO
 
   return (
     <div className="app-layout">
@@ -48,6 +50,7 @@ const LayoutAdmin = () => {
 
             {/* 🔥 Ruta de Soportes (NUEVO) */}
             <Route path="/soportes" element={<Soportes />} />
+            <Route path="/modalidades" element={<GestionModalidades />} />
           </Routes>
         </div>
       </div>

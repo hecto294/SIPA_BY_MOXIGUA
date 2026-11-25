@@ -415,3 +415,60 @@ body.swal2-shown {
   overflow: hidden !important;
   height: auto !important;
 }
+/* ===== Pestañas de estado ===== */
+.usuarios-tabs {
+  display: flex;
+  gap: 14px;
+  margin: 20px 0 14px;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Activos: verde */
+.tab-activos { color: #3ca203; border-color: #3ca203; }
+.tab-activos:hover { background: #ecfdd5; }
+.tab-activos.active { background: #3ca203; color: #fff; }
+
+/* Inactivos: naranja */
+.tab-inactivos { color: #f97316; border-color: #f97316; }
+.tab-inactivos:hover { background: #ffedd5; }
+.tab-inactivos.active { background: #f97316; color: #fff; }
+
+/* Eliminados: rojo */
+.tab-eliminados { color: #dc2626; border-color: #dc2626; }
+.tab-eliminados:hover { background: #fee2e2; }
+.tab-eliminados.active { background: #dc2626; color: #fff; }
+
+/* Botones de acciones en la tabla */
+.btn-inactivar,
+.btn-eliminar,
+.btn-reactivar {
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  margin-left: 6px;
+}
+.btn-inactivar { background: #ffedd5; color: #ea580c; }
+.btn-inactivar:hover { background: #fed7aa; }
+.btn-eliminar { background: #fee2e2; color: #dc2626; }
+.btn-eliminar:hover { background: #fecaca; }
+.btn-reactivar { background: #d1fae5; color: #047857; }
+.btn-reactivar:hover { background: #a7f3d0; }

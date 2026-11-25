@@ -1,4 +1,5 @@
-﻿import os
+﻿# backend/app/modules/auth/router.py
+import os
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional
@@ -131,6 +132,10 @@ def cambiar_password(
     return {"mensaje": "Contraseña actualizada"}
 
 
+# ============================================================
+# RECUPERACIÓN DE CONTRASEÑA (código de 6 dígitos)
+# ============================================================
+
 @router.post("/recuperar-password")
 def recuperar_password(data: schemas.PasswordResetRequest, db: Session = Depends(get_db)):
     return crud.solicitar_reset_password(db, data.email)
@@ -144,3 +149,8 @@ def verificar_codigo(data: schemas.VerifyCodeRequest, db: Session = Depends(get_
 @router.post("/restablecer-password")
 def restablecer_password(data: schemas.PasswordResetConfirm, db: Session = Depends(get_db)):
     return crud.confirmar_reset_password(db, data.email, data.codigo, data.nueva_password)
+
+
+@router.post("/reenviar-codigo")
+def reenviar_codigo(data: schemas.PasswordResetRequest, db: Session = Depends(get_db)):
+    return crud.reenviar_codigo_reset(db, data.email)

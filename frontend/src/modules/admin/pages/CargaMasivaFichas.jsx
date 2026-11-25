@@ -77,12 +77,21 @@ const CargaMasivaFichas = ({ onClose, onFichasCargadas }) => {
 
     try {
       const resultado = await importacionService.importar('fichas', archivo);
-      console.log('✅ Resultado de importación:', resultado);
+      const {
+        total_filas = 0,
+        filas_insertadas = 0,
+        filas_con_error = 0,
+        errores = [],
+      } = resultado || {};
 
-      const { total_filas, filas_insertadas, filas_con_error, errores } = resultado;
+      // 1) Quitar "Subiendo..." y cerrar el modal YA, sin esperar el resumen
+      setCargando(false);
+      if (onFichasCargadas && filas_insertadas > 0) onFichasCargadas();
+      onClose();
 
+      // 2) Mostrar el resumen aparte (no bloquea nada)
       if (filas_con_error === 0) {
-        await Swal.fire({
+        Swal.fire({
           title: '✅ ¡Carga completada!',
           html: `
             <div style="text-align: left; padding: 10px 0;">
@@ -97,12 +106,12 @@ const CargaMasivaFichas = ({ onClose, onFichasCargadas }) => {
           confirmButtonColor: '#3ca203',
         });
       } else {
-        const erroresTexto = errores
+        const erroresTexto = (errores || [])
           .slice(0, 10)
           .map((e) => `• Fila ${e.fila || '?'}: ${e.error || JSON.stringify(e)}`)
           .join('<br/>');
 
-        await Swal.fire({
+        Swal.fire({
           title: '⚠️ Carga con advertencias',
           html: `
             <div style="text-align: left; padding: 10px 0;">
@@ -122,11 +131,6 @@ const CargaMasivaFichas = ({ onClose, onFichasCargadas }) => {
           width: '600px',
         });
       }
-
-      if (onFichasCargadas && filas_insertadas > 0) {
-        onFichasCargadas();
-      }
-      onClose();
     } catch (error) {
       console.error('❌ Error en la carga masiva:', error);
       Swal.fire({

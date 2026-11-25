@@ -1,3 +1,7 @@
+
+
+
+
 import os
 from contextlib import asynccontextmanager
 
@@ -162,3 +166,6 @@ def endpoint_raiz():
         "docs": "/docs",
         "health": "/health",
     }
+
+
+

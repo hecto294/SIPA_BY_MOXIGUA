@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Breadcrumb from '../../shared/components/Breadcrumb';
-
+import { procesoService } from '@/core/services/procesoService';
 const DetalleAprendizBitacoras = () => {
   const { aprendizId } = useParams();
   const navigate = useNavigate();
@@ -164,6 +164,9 @@ const DetalleAprendizBitacoras = () => {
 
       {/* ❌ ELIMINADO: No hay más contenido, no se despliega nada */}
     </div>
+
+        
+
   );
 };
 
