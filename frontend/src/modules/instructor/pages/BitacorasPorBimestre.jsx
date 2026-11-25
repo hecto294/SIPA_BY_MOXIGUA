@@ -162,8 +162,7 @@ const BitacorasPorBimestre = () => {
       icon: 'info',
       confirmButtonText: '✅ Aceptar',
       confirmButtonColor: '#3ca203',
-      showDenyButton: true,
-      denyButtonText: '🔗 Agregar enlace',
+      showDenyButton: false,
       denyButtonColor: '#0ea5e9',
       width: '550px'
     }).then((result) => {
