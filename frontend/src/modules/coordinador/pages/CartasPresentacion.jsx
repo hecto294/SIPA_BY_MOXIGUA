@@ -214,6 +214,36 @@ const CartasPresentacion = () => {
   };
 
   // Abre el PDF en una pestaña nueva (Ver)
+  const handleCambiarEstado = async (cartaId, nuevoEstado) => {
+    try {
+      Swal.fire({
+        title: 'Actualizando estado...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      });
+      
+      await cartaPresentacionService.actualizarEstado(cartaId, nuevoEstado);
+      
+      const resCartas = await cartaPresentacionService.listar();
+      setCartas(resCartas.cartas || []);
+      
+      Swal.fire({
+        title: '✅ Estado actualizado',
+        text: `La carta ha sido ${nuevoEstado === 'APROBADA' ? 'aprobada' : 'rechazada'} correctamente.`,
+        icon: 'success',
+        confirmButtonColor: '#3ca203',
+        timer: 2500,
+      });
+    } catch (err) {
+      Swal.fire({
+        title: '❌ Error',
+        text: err.message || 'No se pudo actualizar el estado',
+        icon: 'error',
+        confirmButtonColor: '#dc2626',
+      });
+    }
+  };
+
   const handleVer = (carta) => {
     const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
     const url = carta.archivo_url.startsWith('http')
@@ -423,6 +453,42 @@ const CartasPresentacion = () => {
                   </td>
                   <td style={{ textAlign: 'center', padding: '12px' }}>
                     <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                      {/* RF-101: Botones de cambio de estado */}
+                      {c.estado !== 'APROBADA' && (
+                        <button
+                          onClick={() => handleCambiarEstado(c.id, 'APROBADA')}
+                          title="Aprobar"
+                          style={{
+                            background: '#d1fae5',
+                            color: '#047857',
+                            border: 'none',
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                          }}
+                        >
+                          <i className="fas fa-check" />
+                        </button>
+                      )}
+                      {c.estado !== 'RECHAZADA' && (
+                        <button
+                          onClick={() => handleCambiarEstado(c.id, 'RECHAZADA')}
+                          title="Rechazar"
+                          style={{
+                            background: '#fee2e2',
+                            color: '#dc2626',
+                            border: 'none',
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                          }}
+                        >
+                          <i className="fas fa-times" />
+                        </button>
+                      )}
+
                       <button
                         onClick={() => handleVer(c)}
                         title="Ver"

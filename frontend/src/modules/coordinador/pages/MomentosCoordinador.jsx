@@ -81,7 +81,7 @@ const MomentosCoordinador = () => {
         <div style="text-align: left; padding: 10px 0;">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
             <div><strong>Estado:</strong></div>
-            <div><span style="color: ${aprendiz.estado === 'Completado' ? '#10b981' : aprendiz.estado === 'En proceso' ? '#f59e0b' : '#ef4444'}; font-weight: bold;">${aprendiz.estado}</span></div>
+            <div><span style="color: ${aprendiz.estado === 'Completado' ? '#10b981' : aprendiz.estado === 'En proceso' ? '#f59e0b' : aprendiz.estado === 'Atrasado' ? '#ef4444' : '#6b7280'}; font-weight: bold;">${aprendiz.estado}</span></div>
             <div><strong>Fecha:</strong></div>
             <div>${aprendiz.fecha}</div>
           </div>
@@ -178,7 +178,7 @@ const MomentosCoordinador = () => {
                   background: 'white',
                   padding: '18px 20px',
                   borderRadius: '12px',
-                  border: `2px solid ${a.estado === 'Completado' ? '#10b981' : a.estado === 'En proceso' ? '#f59e0b' : '#ef4444'}`,
+                  border: `2px solid ${a.estado === 'Completado' ? '#10b981' : a.estado === 'En proceso' ? '#f59e0b' : a.estado === 'Atrasado' ? '#ef4444' : '#e5e7eb'}`,
                   cursor: 'pointer',
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -195,8 +195,8 @@ const MomentosCoordinador = () => {
                 <div>
                   <span
                     style={{
-                      background: a.estado === 'Completado' ? '#d1fae5' : a.estado === 'En proceso' ? '#fef3c7' : '#f3f4f6',
-                      color: a.estado === 'Completado' ? '#047857' : a.estado === 'En proceso' ? '#d97706' : '#6b7280',
+                      background: a.estado === 'Completado' ? '#d1fae5' : a.estado === 'En proceso' ? '#fef3c7' : a.estado === 'Atrasado' ? '#fee2e2' : '#f3f4f6',
+                      color: a.estado === 'Completado' ? '#047857' : a.estado === 'En proceso' ? '#d97706' : a.estado === 'Atrasado' ? '#dc2626' : '#6b7280',
                       padding: '4px 12px',
                       borderRadius: '20px',
                       fontSize: '11px',

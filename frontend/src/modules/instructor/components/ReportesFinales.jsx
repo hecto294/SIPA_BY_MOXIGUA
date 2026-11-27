@@ -1,3 +1,4 @@
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 // src/modules/instructor/components/ReportesFinales.jsx
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
@@ -54,6 +55,40 @@ const ReportesFinales = () => {
     setIsModalOpen(true);
   };
 
+
+  const handleSubirReporte = async (aprendizId, e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      Swal.fire('Formato incorrecto', 'Por favor, selecciona un archivo PDF.', 'warning');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('archivo', file);
+
+    try {
+      // Ajusta esta URL según la ruta real de tu backend
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE}/reportes/subir/${aprendizId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      if (response.ok) {
+        Swal.fire('¡Éxito!', 'Reporte subido correctamente.', 'success');
+        // Opcional: recargar la lista de reportes aquí si tienes una función
+      } else {
+        Swal.fire('Error', 'No se pudo subir el reporte. Intenta de nuevo.', 'error');
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire('Error de conexión', 'No se pudo comunicar con el servidor.', 'error');
+    }
+  };
   if (loading) {
     return (
       <div style={{ padding: '60px', textAlign: 'center', color: '#6b7280' }}>
@@ -122,12 +157,17 @@ const ReportesFinales = () => {
                 <span style={{ background: '#fef3c7', color: '#d97706', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: '500' }}>
                   <i className="fas fa-hourglass-half"></i> Reporte pendiente
                 </span>
-                <button
-                  onClick={() => handleEvaluar(a)}
-                  style={{ background: '#3ca203', color: 'white', border: 'none', padding: '8px 18px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}
+                <label
+                  style={{ background: '#3ca203', color: 'white', border: 'none', padding: '8px 18px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                 >
-                  <i className="fas fa-edit" /> Evaluar
-                </button>
+                  <i className="fas fa-upload" /> Subir Reporte
+                  <input 
+                    type="file" 
+                    accept=".pdf" 
+                    style={{ display: 'none' }} 
+                    onChange={(e) => handleSubirReporte(a.id, e)} 
+                  />
+                </label>
               </div>
             </div>
           ))}

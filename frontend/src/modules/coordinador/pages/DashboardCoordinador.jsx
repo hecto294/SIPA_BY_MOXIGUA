@@ -300,7 +300,7 @@ const DashboardCoordinador = () => {
       <WidgetAlertas
         titulo="Alertas de Seguimiento"
         onVerRecurso={handleVerRecurso}
-        onVerHistorial={() => navigate('/coordinador/reporte-bitacoras')}
+        onVerHistorial={() => navigate('/coordinador/historial-alertas')}
       />
 
       {/* 📊 KPIs */}

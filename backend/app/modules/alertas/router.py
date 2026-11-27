@@ -61,8 +61,22 @@ def resolver(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
-    """Marca una alerta como resuelta. Se moverá al historial."""
+    """RF-109: marca una alerta propia como resuelta. Se moverá al historial."""
+    from app.core.constants import Roles
+
+    ROLES_PUEDEN_RESOLVER = {Roles.COORDINADOR, Roles.INSTRUCTOR, Roles.ADMIN}
+    if current_user.rol_id not in ROLES_PUEDEN_RESOLVER:
+        raise HTTPException(status_code=403, detail="Tu rol no puede resolver alertas")
+
     alerta = crud.get_alerta(db, alerta_id)
     if not alerta:
         raise HTTPException(status_code=404, detail="Alerta no encontrada")
+
+    if alerta.estado != "PENDIENTE":
+        raise HTTPException(status_code=409, detail="La alerta ya fue resuelta")
+
+    propias = crud.listar_pendientes(db, current_user, limit=100000)
+    if alerta.id not in {a.id for a in propias}:
+        raise HTTPException(status_code=403, detail="Esta alerta no es tuya")
+
     return crud.resolver_alerta(db, alerta, current_user.id, payload.nota)

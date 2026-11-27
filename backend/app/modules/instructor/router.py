@@ -1001,3 +1001,67 @@ async def subir_reporte_final(
         "ruta": result["ruta_objeto"],
         "tipo": result["mime_type"],
     }
+
+@router.get("/eventos")
+def get_eventos_instructor(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """
+    RF-097: Retorna todos los eventos (reuniones, charlas) del instructor autenticado.
+    Si hay un error, devuelve una lista vacía para no romper el frontend.
+    """
+    eventos = []
+
+    try:
+        from app.models import ReunionSeguimiento, ProcesoEtapaProductiva
+        # 1. Reuniones de seguimiento
+        reuniones = db.query(ReunionSeguimiento).filter(
+            ReunionSeguimiento.instructor_id == current_user.id,
+            ReunionSeguimiento.is_active == True
+        ).all()
+        
+        for r in reuniones:
+            proceso = db.query(ProcesoEtapaProductiva).filter(ProcesoEtapaProductiva.id == r.proceso_id).first()
+            ficha_num = proceso.ficha.numero_ficha if (proceso and proceso.ficha) else "N/A"
+            fecha_evento = r.fecha_programada or r.fecha_realizada
+            fecha_str = fecha_evento.strftime("%Y-%m-%d") if fecha_evento else None
+            momento_str = r.momento.value if hasattr(r.momento, 'value') else str(r.momento)
+            
+            eventos.append({
+                "id": f"reunion-{r.id}",
+                "tipo": "Reunión de Seguimiento",
+                "titulo": f"Momento: {momento_str}",
+                "fecha": fecha_str,
+                "descripcion": r.observaciones or f"Reunión de seguimiento para la ficha {ficha_num}",
+                "ficha": ficha_num,
+                "estado": "Completado" if r.fecha_realizada else "Pendiente"
+            })
+    except Exception as e:
+        print(f"Error cargando reuniones: {e}")
+
+    try:
+        from app.models import Charla
+        # 2. Charlas programadas
+        charlas = db.query(Charla).filter(
+            Charla.instructor_id == current_user.id,
+            Charla.is_active == True
+        ).all()
+        
+        for c in charlas:
+            fecha_str = c.fecha_programada.strftime("%Y-%m-%d") if c.fecha_programada else None
+            eventos.append({
+                "id": f"charla-{c.id}",
+                "tipo": "Charla",
+                "titulo": getattr(c, 'titulo', 'Charla Programada'),
+                "fecha": fecha_str,
+                "descripcion": getattr(c, 'descripcion', 'Charla de formación'),
+                "ficha": "Varias",
+                "estado": "Programada"
+            })
+    except Exception as e:
+        # Si el modelo Charla no existe o falla, ignoramos sin romper
+        pass
+
+    return eventos
+

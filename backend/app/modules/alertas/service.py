@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.models import (
     ProcesoEtapaProductiva, Bitacora, ReunionSeguimiento,
     ChecklistDocumentoProceso, EstadoBitacora, EstadoProceso,
+    Charla, AsistenciaCharla,
 )
 from app.modules.alertas import crud as alerta_crud
 
@@ -143,6 +144,60 @@ def generar_alertas_instructor(db: Session, instructor_id: int) -> int:
             ):
                 count += 1
 
+    # 5. Reuniones de seguimiento vencidas sin realizar
+    ahora_inst = datetime.utcnow()
+    reuniones_vencidas = (
+        db.query(ReunionSeguimiento, ProcesoEtapaProductiva)
+        .join(ProcesoEtapaProductiva, ReunionSeguimiento.proceso_id == ProcesoEtapaProductiva.id)
+        .filter(
+            ReunionSeguimiento.is_active == True,
+            ReunionSeguimiento.fecha_realizada.is_(None),
+            func.date(ReunionSeguimiento.fecha_programada) < hoy,
+            ProcesoEtapaProductiva.instructor_id == instructor_id,
+            ProcesoEtapaProductiva.is_active == True,
+        ).all()
+    )
+    for r, p in reuniones_vencidas:
+        momento_txt = r.momento.replace("_", " ") if r.momento else "Reunión"
+        if alerta_crud.crear_alerta(
+            db,
+            titulo="Reunión de seguimiento vencida",
+            mensaje=f"{momento_txt} con {p.aprendiz_nombre or 'aprendiz'} estaba programada para el {r.fecha_programada.date()} y no se ha registrado.",
+            tipo="URGENTE",
+            categoria="REUNIONES",
+            rol_destino="INSTRUCTOR",
+            usuario_id=instructor_id,
+            aprendiz_id=p.aprendiz_id,
+            proceso_id=p.id,
+            entidad_relacionada="reunion",
+            entidad_id=r.id,
+            clave_unica=f"inst_reunion_venc_{r.id}_{hoy.strftime('%Y-%W')}",
+        ):
+            count += 1
+
+    # 6. Charlas próximas que dicta el instructor (7 días)
+    ahora_ch = datetime.utcnow()
+    charlas_inst = db.query(Charla).filter(
+        Charla.is_active == True,
+        Charla.instructor_id == instructor_id,
+        Charla.fecha_programada.between(ahora_ch, ahora_ch + timedelta(days=7)),
+    ).all()
+    for ch in charlas_inst:
+        tipo_txt = ch.tipo_charla.replace("_", " ").title() if ch.tipo_charla else "Charla"
+        if alerta_crud.crear_alerta(
+            db,
+            titulo="Charla próxima a dictar",
+            mensaje=f"{tipo_txt} programada para el {ch.fecha_programada.date()}.",
+            tipo="INFO",
+            categoria="CHARLAS",
+            rol_destino="INSTRUCTOR",
+            usuario_id=instructor_id,
+            entidad_relacionada="charla",
+            entidad_id=ch.id,
+            clave_unica=f"inst_charla_prox_{ch.id}_{hoy}",
+        ):
+            count += 1
+
     return count
 
 
@@ -232,6 +287,130 @@ def generar_alertas_aprendiz(db: Session, aprendiz_id: int) -> int:
                 clave_unica=clave,
             ):
                 count += 1
+
+        # Reuniones de seguimiento próximas (7 días)
+        ahora = datetime.utcnow()
+        reuniones = db.query(ReunionSeguimiento).filter(
+            ReunionSeguimiento.proceso_id == p.id,
+            ReunionSeguimiento.is_active == True,
+            ReunionSeguimiento.fecha_realizada.is_(None),
+            ReunionSeguimiento.fecha_programada.between(ahora, ahora + timedelta(days=7)),
+        ).all()
+        for r in reuniones:
+            momento_txt = r.momento.replace("_", " ") if r.momento else "Reunión"
+            if alerta_crud.crear_alerta(
+                db,
+                titulo="Reunión de seguimiento próxima",
+                mensaje=f"{momento_txt} programada para el {r.fecha_programada.date()}.",
+                tipo="INFO",
+                categoria="REUNIONES",
+                rol_destino="APRENDIZ",
+                usuario_id=aprendiz_id,
+                aprendiz_id=aprendiz_id,
+                proceso_id=p.id,
+                entidad_relacionada="reunion",
+                entidad_id=r.id,
+                clave_unica=f"apz_reunion_prox_{r.id}_{hoy}",
+            ):
+                count += 1
+
+        # Reuniones de seguimiento vencidas sin realizar
+        vencidas = db.query(ReunionSeguimiento).filter(
+            ReunionSeguimiento.proceso_id == p.id,
+            ReunionSeguimiento.is_active == True,
+            ReunionSeguimiento.fecha_realizada.is_(None),
+            func.date(ReunionSeguimiento.fecha_programada) < hoy,
+        ).all()
+        for r in vencidas:
+            momento_txt = r.momento.replace("_", " ") if r.momento else "Reunión"
+            if alerta_crud.crear_alerta(
+                db,
+                titulo="Reunión de seguimiento sin realizar",
+                mensaje=f"{momento_txt} estaba programada para el {r.fecha_programada.date()} y no se ha registrado.",
+                tipo="URGENTE",
+                categoria="REUNIONES",
+                rol_destino="APRENDIZ",
+                usuario_id=aprendiz_id,
+                aprendiz_id=aprendiz_id,
+                proceso_id=p.id,
+                entidad_relacionada="reunion",
+                entidad_id=r.id,
+                clave_unica=f"apz_reunion_venc_{r.id}_{hoy.strftime('%Y-%W')}",
+            ):
+                count += 1
+
+        # Plazo: etapa productiva por finalizar (15 días)
+        if p.fecha_fin and hoy <= p.fecha_fin <= hoy + timedelta(days=15):
+            if alerta_crud.crear_alerta(
+                db,
+                titulo="Tu etapa productiva está por finalizar",
+                mensaje=f"Tu etapa productiva termina el {p.fecha_fin}.",
+                tipo="ADVERTENCIA",
+                categoria="PLAZOS",
+                rol_destino="APRENDIZ",
+                usuario_id=aprendiz_id,
+                aprendiz_id=aprendiz_id,
+                proceso_id=p.id,
+                entidad_relacionada="proceso",
+                entidad_id=p.id,
+                clave_unica=f"apz_prox_fin_{p.id}_{hoy}",
+            ):
+                count += 1
+
+        # Charlas de la ficha: próximas (7 días)
+        ahora_ch = datetime.utcnow()
+        charlas_prox = db.query(Charla).filter(
+            Charla.ficha_id == p.ficha_id,
+            Charla.is_active == True,
+            Charla.fecha_programada.between(ahora_ch, ahora_ch + timedelta(days=7)),
+        ).all()
+        for ch in charlas_prox:
+            tipo_txt = ch.tipo_charla.replace("_", " ").title() if ch.tipo_charla else "Charla"
+            if alerta_crud.crear_alerta(
+                db,
+                titulo="Charla próxima",
+                mensaje=f"{tipo_txt} programada para el {ch.fecha_programada.date()}.",
+                tipo="INFO",
+                categoria="CHARLAS",
+                rol_destino="APRENDIZ",
+                usuario_id=aprendiz_id,
+                aprendiz_id=aprendiz_id,
+                proceso_id=p.id,
+                entidad_relacionada="charla",
+                entidad_id=ch.id,
+                clave_unica=f"apz_charla_prox_{ch.id}_{hoy}",
+            ):
+                count += 1
+
+        # Charlas ya realizadas sin asistencia registrada
+        charlas_pasadas = db.query(Charla).filter(
+            Charla.ficha_id == p.ficha_id,
+            Charla.is_active == True,
+            Charla.fecha_programada < ahora_ch,
+        ).all()
+        for ch in charlas_pasadas:
+            asistencia = db.query(AsistenciaCharla).filter(
+                AsistenciaCharla.charla_id == ch.id,
+                AsistenciaCharla.aprendiz_id == aprendiz_id,
+                AsistenciaCharla.is_active == True,
+            ).first()
+            if not asistencia or not asistencia.asistio:
+                tipo_txt = ch.tipo_charla.replace("_", " ").title() if ch.tipo_charla else "Charla"
+                if alerta_crud.crear_alerta(
+                    db,
+                    titulo="Asistencia a charla pendiente",
+                    mensaje=f"No tienes asistencia registrada para la {tipo_txt} del {ch.fecha_programada.date()}.",
+                    tipo="ADVERTENCIA",
+                    categoria="CHARLAS",
+                    rol_destino="APRENDIZ",
+                    usuario_id=aprendiz_id,
+                    aprendiz_id=aprendiz_id,
+                    proceso_id=p.id,
+                    entidad_relacionada="charla",
+                    entidad_id=ch.id,
+                    clave_unica=f"apz_charla_asist_{ch.id}_{hoy.strftime('%Y-%W')}",
+                ):
+                    count += 1
 
     return count
 

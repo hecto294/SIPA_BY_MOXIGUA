@@ -116,7 +116,7 @@ const DashboardInstructor = ({ activePage }) => {
     <>
       <style>{KPI_STYLES}</style>
       <KPIsInstructor />
-      <WidgetAlertas titulo="Mis Alertas" onVerRecurso={handleVerRecurso} onVerHistorial={() => navigate('/instructor/bitacora')} />
+      <WidgetAlertas titulo="Mis Alertas" onVerRecurso={handleVerRecurso} onVerHistorial={() => navigate('/instructor/historial-alertas')} />
     </>
   );
 

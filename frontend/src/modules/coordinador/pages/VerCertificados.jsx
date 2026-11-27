@@ -1,5 +1,5 @@
 // src/pages/coordinador/VerCertificados.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Breadcrumb from '@/modules/shared/components/Breadcrumb'; // <--- CORREGIDO
 import Swal from 'sweetalert2';
@@ -10,11 +10,27 @@ const VerCertificados = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [certificados, setCertificados] = useState([
-    { id: 1, aprendiz: 'Laura Sofia Martinez', ficha: '2875901', estado: 'Listo', fecha: '15/12/2025' },
-    { id: 2, aprendiz: 'Juan Diego Ramirez', ficha: '2875901', estado: 'Pendiente', fecha: '-' },
-    { id: 3, aprendiz: 'Maria Camila Torres', ficha: '2875902', estado: 'Listo', fecha: '10/01/2026' },
-  ]);
+  const [certificados, setCertificados] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCertificados = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/certificados/ver', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const data = await response.json();
+        setCertificados(data);
+      } catch (err) {
+        console.error('Error cargando certificados:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCertificados();
+  }, []);
 
   const handleSearch = () => setSearchQuery(searchTerm);
   const handleClear = () => { setSearchTerm(''); setSearchQuery(''); };
@@ -23,6 +39,47 @@ const VerCertificados = () => {
     c.aprendiz.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.ficha.includes(searchQuery)
   );
+
+  const handleDescargarMasivo = async () => {
+    try {
+      Swal.fire({
+        title: 'Generando ZIP masivo...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      const response = await fetch('http://localhost:8000/certificados/descargar-masivo', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Error al generar los certificados');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'certificados_masivos.zip';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      Swal.fire({
+        title: '✅ Descarga completada',
+        text: 'Se ha descargado el archivo ZIP con los certificados.',
+        icon: 'success',
+        confirmButtonColor: '#3ca203',
+      });
+    } catch (err) {
+      Swal.fire({
+        title: '❌ Error',
+        text: err.message || 'No se pudo descargar los certificados',
+        icon: 'error',
+        confirmButtonColor: '#dc2626',
+      });
+    }
+  };
 
   const handleDescargarCertificado = async (certificado) => {
     // Mostrar confirmación antes de descargar
@@ -76,62 +133,7 @@ const VerCertificados = () => {
     }
   };
 
-  const handleDescargarTodos = async () => {
-    const certificadosListos = certificados.filter(c => c.estado === 'Listo');
-    
-    if (certificadosListos.length === 0) {
-      await showWarning('No hay certificados listos para descargar.', '⚠️ Sin certificados');
-      return;
-    }
-
-    const result = await Swal.fire({
-      title: '📦 Descarga masiva',
-      text: `¿Deseas descargar ${certificadosListos.length} certificados?`,
-      icon: 'question',
-      iconColor: '#3ca203',
-      showCancelButton: true,
-      confirmButtonColor: '#3ca203',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Sí, descargar todos',
-      cancelButtonText: 'Cancelar',
-      allowOutsideClick: false,
-      allowEscapeKey: true,
-      width: '450px',
-      padding: '25px 30px',
-      background: '#ffffff',
-      color: '#1f2937',
-      customClass: {
-        popup: 'swal2-popup-sandbox',
-        title: 'swal2-title-sandbox',
-        confirmButton: 'swal2-confirm-sandbox',
-        cancelButton: 'swal2-cancel-sandbox',
-      }
-    });
-
-    if (result.isConfirmed) {
-      await Swal.fire({
-        title: '✅ Descarga masiva completada',
-        text: `${certificadosListos.length} certificados se han descargado exitosamente.`,
-        icon: 'success',
-        iconColor: '#3ca203',
-        confirmButtonColor: '#3ca203',
-        confirmButtonText: 'Aceptar',
-        allowOutsideClick: false,
-        allowEscapeKey: true,
-        width: '450px',
-        padding: '25px 30px',
-        background: '#ffffff',
-        color: '#1f2937',
-        timer: 3000,
-        timerProgressBar: true,
-        customClass: {
-          popup: 'swal2-popup-sandbox',
-          title: 'swal2-title-sandbox',
-          confirmButton: 'swal2-confirm-sandbox',
-        }
-      });
-    }
-  };
+  
 
   return (
     <div style={{ width: '100%', padding: '20px 0' }}>
@@ -143,7 +145,7 @@ const VerCertificados = () => {
           <p style={{ color: '#6b7280', margin: '5px 0 0 0' }}>Gestión de certificados de los aprendices.</p>
         </div>
         <button
-          onClick={handleDescargarTodos}
+          onClick={handleDescargarMasivo}
           style={{
             background: '#3ca203',
             color: 'white',

@@ -33,6 +33,12 @@ const SidebarAprendiz = ({ setActivePage, activePage }) => {
           >
             <i className="fas fa-envelope-open-text"></i> Mis Cartas de Presentación
           </li>
+          <li 
+            className={activePage === 'certificados' ? 'active' : ''} 
+            onClick={() => setActivePage('certificados')}
+          >
+            <i className="fas fa-award"></i> Mis Certificados
+          </li>
 
           {/* NOVEDADES */}
           <li 
