@@ -1,3 +1,7 @@
+
+
+
+
 import os
 from contextlib import asynccontextmanager
 
@@ -28,6 +32,7 @@ from app.modules.busqueda.router import router as busqueda_router
 from app.modules.auditoria.router import router as auditoria_router
 from app.modules.observaciones.router import router as observaciones_router
 from app.modules.instructor.router import router as instructor_router
+from app.modules.certificados.router import router as certificados_router
 
 # 🔥 Router de alertas
 from app.modules.alertas.router import router as alertas_router
@@ -66,19 +71,18 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+# -----------------------------
+
+
+
+
+# -----------------------------------------------------------
+
+
 # Registro global de rate limiting
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-# CORS con lista blanca desde configuracion
-allow_credentials = "*" not in settings.CORS_ORIGINS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=allow_credentials,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 @app.middleware("http")
@@ -94,6 +98,22 @@ async def security_headers(request, call_next):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 
+
+
+# --- CONFIGURACIÓN DE CORS (Debe ir al final de los middlewares) ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+# -------------------------------------------------------------------
 
 # Registro de routers
 app.include_router(auth_router)
@@ -113,6 +133,7 @@ app.include_router(busqueda_router)
 app.include_router(auditoria_router)
 app.include_router(observaciones_router)
 app.include_router(instructor_router)
+app.include_router(certificados_router)
 
 # 🔥 Router de alertas
 app.include_router(alertas_router)
@@ -162,3 +183,6 @@ def endpoint_raiz():
         "docs": "/docs",
         "health": "/health",
     }
+
+
+

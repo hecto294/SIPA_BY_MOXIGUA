@@ -108,10 +108,10 @@ const BitacorasPorBimestre = () => {
           ${archivos.map((a) => `
             <div style="background: #f8fafc; padding: 6px 10px; border-radius: 4px; border: 1px solid #e5e7eb; margin-bottom: 4px; font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
               <span><i class="fas fa-file-pdf" style="color: #dc2626; margin-right: 6px;"></i>${a.nombre}</span>
-              <a href="http://localhost:8000${a.ruta}" target="_blank" style="color: #0ea5e9; font-size: 11px; text-decoration: none;">
+              <a href="${import.meta.env.VITE_API_URL || "http://localhost:8000"}/bitacoras/evidencias/${a.id}/descargar?inline=true" target="_blank" style="color: #0ea5e9; font-size: 11px; text-decoration: none;">
                 <i class="fas fa-eye"></i> Ver
               </a>
-            </div>
+            <a href="${import.meta.env.VITE_API_URL || "http://localhost:8000"}/bitacoras/evidencias/${a.id}/descargar" target="_blank" style="color: #3ca203; text-decoration: underline; margin-left: 10px; font-weight: bold; font-size: 12px;">Descargar</a></div>
           `).join('')}
         </div>
       `
@@ -162,8 +162,50 @@ const BitacorasPorBimestre = () => {
       icon: 'info',
       confirmButtonText: '✅ Aceptar',
       confirmButtonColor: '#3ca203',
+      showDenyButton: false,
+      denyButtonColor: '#0ea5e9',
       width: '550px'
+    }).then((result) => {
+      if (result.isDenied) handleAgregarEnlace(bitacora);
     });
+  };
+
+  // RF-065: registrar un enlace como documento de soporte
+  const handleAgregarEnlace = async (bitacora) => {
+    const { value: url, isConfirmed } = await Swal.fire({
+      title: '🔗 Agregar enlace de soporte',
+      input: 'url',
+      inputLabel: 'Pega el enlace al documento (http:// o https://)',
+      inputPlaceholder: 'https://...',
+      showCancelButton: true,
+      confirmButtonText: 'Guardar enlace',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#3ca203',
+      inputValidator: (valor) => {
+        const v = (valor || '').trim();
+        if (!v) return 'Escribe el enlace';
+        if (v.length > 500) return 'El enlace es demasiado largo (máximo 500 caracteres)';
+        if (!/^https?:\/\/\S+$/i.test(v)) return 'Debe empezar con http:// o https://';
+        return null;
+      },
+    });
+    if (!isConfirmed) return;
+
+    try {
+      await apiClient.post(
+        `/bitacoras/${bitacora.id}/evidencias/enlace`,
+        {},
+        { params: { enlace_url: url.trim() } }
+      );
+      await Swal.fire({ icon: 'success', title: 'Enlace registrado', timer: 1500, showConfirmButton: false });
+    } catch (err) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se pudo guardar el enlace',
+        text: err.message || 'Error al guardar el enlace',
+      });
+    }
+    handleVer(bitacora);
   };
 
   const handleObservacion = (bitacora) => {

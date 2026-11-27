@@ -7,6 +7,7 @@ const ITEMS = [
   { key: 'parametrizacion', icon: 'fa-cog', label: 'Parametrización', path: '/coordinador/parametrizacion' },
   { key: 'fichas', icon: 'fa-layer-group', label: 'Centro de Fichas', path: '/coordinador/fichas' },
   { key: 'cartas-presentacion', icon: 'fa-envelope-open-text', label: 'Cartas de Presentación', path: '/coordinador/cartas-presentacion' },
+  { key: 'certificados', icon: 'fa-award', label: 'Certificados', path: '/coordinador/certificados' },
   { key: 'reportes', icon: 'fa-chart-line', label: 'Reportes', path: '/coordinador/reportes' },
   { key: 'reporte-bitacoras', icon: 'fa-book', label: 'Bitácoras', path: '/coordinador/reporte-bitacoras' },
   { key: 'momentos', icon: 'fa-clock', label: 'Momentos', path: '/coordinador/momentos' },
@@ -16,6 +17,9 @@ const ITEMS = [
   { key: 'crear-proceso', icon: 'fa-plus-circle', label: 'Crear proceso', path: '/coordinador/procesos/nuevo' },
   { key: 'instructores', icon: 'fa-user', label: 'Instructores', path: '/coordinador/instructores' },
   { key: 'instructores-ep', icon: 'fa-user-graduate', label: 'Instructores EP', path: '/coordinador/instructores-ep' },
+  { key: 'subir-alternativa', icon: 'fa-exchange-alt', label: 'Subir Alternativa', path: '/coordinador/subir-alternativa' },
+  { key: 'modalidades', icon: 'fa-tasks', label: 'Modalidades EP', path: '/coordinador/modalidades' },
+  { key: 'soportes', icon: 'fa-headset', label: 'Soportes', path: '/coordinador/soportes' },
 ];
 
 const SidebarCoordinador = ({ onNavigate, activePage }) => {

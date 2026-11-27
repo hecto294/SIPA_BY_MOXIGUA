@@ -1,4 +1,5 @@
 // src/modules/coordinador/pages/DashboardCoordinador.jsx
+import GestionModalidades from '@/modules/shared/pages/GestionModalidades';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dashboardService } from '@/core/services/dashboardService';
@@ -299,7 +300,7 @@ const DashboardCoordinador = () => {
       <WidgetAlertas
         titulo="Alertas de Seguimiento"
         onVerRecurso={handleVerRecurso}
-        onVerHistorial={() => navigate('/coordinador/reporte-bitacoras')}
+        onVerHistorial={() => navigate('/coordinador/historial-alertas')}
       />
 
       {/* 📊 KPIs */}

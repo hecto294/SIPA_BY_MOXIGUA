@@ -5,9 +5,11 @@ import Header from '@/modules/shared/components/Header';
 import SidebarCoordinador from '@/modules/coordinador/components/SidebarCoordinador';
 import '@/App.css';
 
+import GestionModalidades from '@/modules/shared/pages/GestionModalidades';
 import DashboardCoordinador from "@/modules/coordinador/pages/DashboardCoordinador";
 import VerFichas from "@/modules/coordinador/pages/VerFichas";
 import VerAprendices from "@/modules/coordinador/pages/VerAprendices";
+import VerCertificados from '@/modules/coordinador/pages/VerCertificados';
 import CartasPresentacion from "@/modules/coordinador/pages/CartasPresentacion";
 import ReportesGlobales from "@/modules/coordinador/pages/ReportesGlobales";
 import Parametrizacion from "@/modules/coordinador/pages/Parametrizacion";
@@ -23,6 +25,7 @@ import ReporteFichaDetalle from "@/modules/coordinador/pages/ReporteFichaDetalle
 import MomentosCoordinador from "@/modules/coordinador/pages/MomentosCoordinador";
 import MiPerfil from "@/modules/coordinador/pages/MiPerfil";
 import FichasParametrizacion from "@/modules/coordinador/pages/FichasParametrizacion";
+import ProgramasFormacion from "@/modules/coordinador/pages/ProgramasFormacion";
 import AprendicesFicha from "@/modules/coordinador/pages/AprendicesFicha";
 import ReporteBitacoras from "@/modules/coordinador/pages/ReporteBitacoras";
 import ReporteFichaBitacoras from "@/modules/coordinador/pages/ReporteFichaBitacoras";
@@ -36,6 +39,7 @@ import CentrosFormacion from "@/modules/coordinador/pages/CentrosFormacion";
 
 // 🔥 Soportes (compartida con admin)
 import Soportes from "@/modules/shared/pages/Novedades";
+import HistorialAlertas from '@/shared/components/HistorialAlertas';
 
 // 🔥 Crear proceso de aprendiz (tarea 6)
 import CrearProceso from "@/modules/coordinador/pages/CrearProceso";
@@ -72,6 +76,8 @@ const LayoutCoordinador = () => {
   else if (location.pathname.includes('/instructores-ep')) activePage = 'instructores-ep';
   else if (location.pathname.includes('/centros-formacion')) activePage = 'centros-formacion';
   else if (location.pathname.includes('/soportes')) activePage = 'soportes';
+  else if (location.pathname.includes('/modalidades')) activePage = 'modalidades'; // 🔥 NUEVO
+  else if (location.pathname.includes('/certificados')) activePage = 'certificados';
   else if (location.pathname.includes('/empresas')) activePage = 'empresas';
   else if (location.pathname.includes('/aprendices')) activePage = 'aprendices';
   else if (location.pathname.includes('/instructores')) activePage = 'instructores';
@@ -92,6 +98,7 @@ const LayoutCoordinador = () => {
             <Route path="/parametrizacion" element={<Parametrizacion />} />
             <Route path="/fichas" element={<VerFichas />} />
             <Route path="/cartas-presentacion" element={<CartasPresentacion />} />
+              <Route path="/certificados" element={<VerCertificados />} />
             <Route path="/ficha/:idFicha" element={<VerAprendices />} />
             <Route path="/reportes" element={<ReportesGlobales />} />
             <Route path="/reportes/ficha/:idFicha" element={<ReporteFichaDetalle />} />
@@ -115,13 +122,18 @@ const LayoutCoordinador = () => {
             <Route path="/momentos" element={<MomentosCoordinador />} />
             <Route path="/mi-perfil" element={<MiPerfil />} />
             <Route path="/fichas-parametrizacion" element={<FichasParametrizacion />} />
+            <Route path="/programas" element={<ProgramasFormacion />} />
             <Route path="/aprendices-ficha/:idFicha" element={<AprendicesFicha />} />
 
             {/* 🔥 Crear proceso de aprendiz */}
             <Route path="/procesos/nuevo" element={<CrearProceso />} />
 
+            {/* 🔥 Historial de alertas */}
+            <Route path="/historial-alertas" element={<HistorialAlertas rutaVolver="/coordinador" />} />
+
             {/* 🔥 Ruta de Soportes */}
             <Route path="/soportes" element={<Soportes />} />
+            <Route path="/modalidades" element={<GestionModalidades />} />
           </Routes>
         </div>
       </div>

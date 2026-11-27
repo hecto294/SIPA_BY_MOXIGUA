@@ -5,6 +5,8 @@ import Breadcrumb from '@/modules/shared/components/Breadcrumb';
 import Swal from 'sweetalert2';
 import { apiClient } from '@/core/api/client';
 import { showSuccess, showError } from '@/core/utils/sweetAlert';
+import EvaluacionFinalModal from '../../coordinador/components/EvaluacionFinalModal';
+import { procesoService } from '@/core/services/procesoService';
 
 const DetalleFichaInstructor = () => {
   const { idFicha } = useParams();
@@ -15,6 +17,8 @@ const DetalleFichaInstructor = () => {
   const [ficha, setFicha] = useState(null);
   const [aprendices, setAprendices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProceso, setSelectedProceso] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -215,7 +219,7 @@ const DetalleFichaInstructor = () => {
           : '';
         return `
           <div style="background: #f8fafc; padding: 12px 15px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #3ca203; text-align: left;">
-            <p style="margin: 0; font-size: 14px; color: #1f2937; line-height: 1.5;">${obs.texto}</p>
+            <p style="margin: 0; font-size: 14px; color: #1f2937; line-height: 1.5;">${obs.texto} <button onClick={() => handleEliminarObservacion(obs.id, aprendiz.aprendiz_id)} style={{ background: "transparent", border: "none", color: "#dc2626", cursor: "pointer", marginLeft: "10px" }}><i className="fas fa-trash"></i></button></p>
             <p style="margin: 5px 0 0 0; font-size: 11px; color: #6b7280;">
               <i class="fas fa-calendar-alt" style="margin-right: 4px;"></i>
               ${fecha} - ${hora}
@@ -249,7 +253,36 @@ const DetalleFichaInstructor = () => {
   };
 
   if (loading) {
-    return (
+  
+  const handleEliminarObservacion = async (obsId, aprendizId) => {
+    const confirm = await Swal.fire({
+      title: '¿Eliminar observación?',
+      text: 'Esta acción no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      await apiClient.delete(`/observaciones/${obsId}`);
+      Swal.fire({ title: 'Eliminada', icon: 'success', timer: 1500, showConfirmButton: false });
+      // Recargar las observaciones
+      const nuevas = await apiClient.get(`/observaciones/aprendiz/${aprendizId}`);
+      // Buscar el aprendiz y actualizar sus observaciones (esto depende de cómo esté estructurado el estado)
+      // Si el estado se maneja con un objeto de aprendices, aquí habría que actualizarlo.
+      // Por simplicidad, recargamos toda la página.
+      window.location.reload();
+    } catch (err) {
+      Swal.fire({ title: 'Error', text: 'No se pudo eliminar la observación', icon: 'error' });
+    }
+  };
+
+  return (
       <div style={{ padding: '60px', textAlign: 'center', color: '#6b7280' }}>
         <i className="fas fa-spinner fa-spin" style={{ fontSize: '32px', color: '#3ca203' }}></i>
         <p style={{ marginTop: '15px' }}>Cargando ficha...</p>
@@ -258,7 +291,36 @@ const DetalleFichaInstructor = () => {
   }
 
   if (error) {
-    return (
+  
+  const handleEliminarObservacion = async (obsId, aprendizId) => {
+    const confirm = await Swal.fire({
+      title: '¿Eliminar observación?',
+      text: 'Esta acción no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      await apiClient.delete(`/observaciones/${obsId}`);
+      Swal.fire({ title: 'Eliminada', icon: 'success', timer: 1500, showConfirmButton: false });
+      // Recargar las observaciones
+      const nuevas = await apiClient.get(`/observaciones/aprendiz/${aprendizId}`);
+      // Buscar el aprendiz y actualizar sus observaciones (esto depende de cómo esté estructurado el estado)
+      // Si el estado se maneja con un objeto de aprendices, aquí habría que actualizarlo.
+      // Por simplicidad, recargamos toda la página.
+      window.location.reload();
+    } catch (err) {
+      Swal.fire({ title: 'Error', text: 'No se pudo eliminar la observación', icon: 'error' });
+    }
+  };
+
+  return (
       <div style={{ padding: '60px', textAlign: 'center' }}>
         <i className="fas fa-exclamation-circle" style={{ fontSize: '40px', color: '#dc2626' }}></i>
         <h3 style={{ color: '#dc2626', marginTop: '15px' }}>Error</h3>
@@ -272,6 +334,35 @@ const DetalleFichaInstructor = () => {
       </div>
     );
   }
+
+
+  const handleEliminarObservacion = async (obsId, aprendizId) => {
+    const confirm = await Swal.fire({
+      title: '¿Eliminar observación?',
+      text: 'Esta acción no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      await apiClient.delete(`/observaciones/${obsId}`);
+      Swal.fire({ title: 'Eliminada', icon: 'success', timer: 1500, showConfirmButton: false });
+      // Recargar las observaciones
+      const nuevas = await apiClient.get(`/observaciones/aprendiz/${aprendizId}`);
+      // Buscar el aprendiz y actualizar sus observaciones (esto depende de cómo esté estructurado el estado)
+      // Si el estado se maneja con un objeto de aprendices, aquí habría que actualizarlo.
+      // Por simplicidad, recargamos toda la página.
+      window.location.reload();
+    } catch (err) {
+      Swal.fire({ title: 'Error', text: 'No se pudo eliminar la observación', icon: 'error' });
+    }
+  };
 
   return (
     <div style={{ width: '100%', padding: '20px 0' }}>
@@ -332,7 +423,36 @@ const DetalleFichaInstructor = () => {
             <tbody>
               {filteredAprendices.map((ap) => {
                 const cfg = getEstadoConfig(ap.estado);
-                return (
+              
+  const handleEliminarObservacion = async (obsId, aprendizId) => {
+    const confirm = await Swal.fire({
+      title: '¿Eliminar observación?',
+      text: 'Esta acción no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      await apiClient.delete(`/observaciones/${obsId}`);
+      Swal.fire({ title: 'Eliminada', icon: 'success', timer: 1500, showConfirmButton: false });
+      // Recargar las observaciones
+      const nuevas = await apiClient.get(`/observaciones/aprendiz/${aprendizId}`);
+      // Buscar el aprendiz y actualizar sus observaciones (esto depende de cómo esté estructurado el estado)
+      // Si el estado se maneja con un objeto de aprendices, aquí habría que actualizarlo.
+      // Por simplicidad, recargamos toda la página.
+      window.location.reload();
+    } catch (err) {
+      Swal.fire({ title: 'Error', text: 'No se pudo eliminar la observación', icon: 'error' });
+    }
+  };
+
+  return (
                   <tr key={ap.proceso_id} style={{ borderBottom: '1px solid #e5e7eb' }}>
                     <td style={{ padding: '12px', fontWeight: 'bold' }}>{ap.nombre}</td>
                     <td style={{ padding: '12px' }}>{ap.empresa}</td>
@@ -366,8 +486,16 @@ const DetalleFichaInstructor = () => {
           </table>
         )}
       </div>
+
+      <EvaluacionFinalModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        proceso={selectedProceso}
+        onSuccess={() => { setIsModalOpen(false); window.location.reload(); }}
+      />
     </div>
   );
 };
+
 
 export default DetalleFichaInstructor;

@@ -1,4 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse, RedirectResponse
+from pathlib import Path
+from urllib.parse import urlparse
+from fastapi import status, Query
 from sqlalchemy.orm import Session
 from typing import Optional, List
 
@@ -323,3 +327,58 @@ def delete_bitacora(
     bitacora.is_active = False
     db.commit()
     return {"message": "Bitácora eliminada exitosamente"}
+
+
+
+
+
+@router.get("/evidencias/{evidencia_id}/descargar")
+async def descargar_evidencia(
+    evidencia_id: int,
+    inline: bool = False,
+    db: Session = Depends(get_db),
+):
+    """
+    RF-083: Descargar los archivos de una bitácora.
+    Sirve el archivo físico almacenado en el servidor.
+    """
+    evidencia = db.query(EvidenciaArchivo).filter(EvidenciaArchivo.id == evidencia_id).first()
+    if not evidencia:
+        raise HTTPException(status_code=404, detail="Evidencia no encontrada")
+
+    # Si es un enlace (RF-065), redirigir a la URL
+    if evidencia.enlace_url:
+        return RedirectResponse(url=evidencia.enlace_url)
+
+    # Si es un archivo físico, servirlo
+    ruta_archivo = Path(evidencia.ruta_objeto)
+    if not ruta_archivo.exists():
+        raise HTTPException(status_code=404, detail="El archivo físico no existe en el servidor")
+
+    return FileResponse(
+        path=ruta_archivo,
+        filename=evidencia.nombre_archivo,
+        media_type=evidencia.mime_type or 'application/octet-stream',
+        content_disposition_type="inline" if inline else "attachment",
+    )
+
+
+@router.patch("/{bitacora_id}/observacion", status_code=200)
+async def actualizar_observacion(
+    bitacora_id: int,
+    observacion: str,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """
+    RF-067: Registrar/actualizar la observación de una bitácora.
+    """
+    bitacora = db.query(Bitacora).filter(Bitacora.id == bitacora_id, Bitacora.is_active == True).first()
+    if not bitacora:
+        raise HTTPException(status_code=404, detail="Bitácora no encontrada")
+
+    bitacora.observacion = observacion
+    db.commit()
+    db.refresh(bitacora)
+
+    return {"message": "Observación actualizada correctamente", "bitacora_id": bitacora_id, "observacion": observacion}

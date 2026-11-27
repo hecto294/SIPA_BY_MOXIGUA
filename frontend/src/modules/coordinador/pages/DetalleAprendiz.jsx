@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Breadcrumb from '@/modules/shared/components/Breadcrumb';
-import procesoService from '@/core/services/procesoService';
+import { procesoService } from '@/core/services/procesoService';
+import EvaluacionFinalModal from '../components/EvaluacionFinalModal';
 
 const ESTADOS_PROCESO = [
   { value: 'ACTIVO', label: 'Activo (En formación)' },
@@ -23,6 +24,7 @@ const DetalleAprendiz = () => {
   );
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Checklist
   const [checklist, setChecklist] = useState([]);
@@ -523,6 +525,33 @@ const DetalleAprendiz = () => {
           )}
         </div>
 
+
+        {/* ==================== RF-050: EVALUACIÓN FINAL ==================== */}
+        <div style={{ borderTop: '2px solid #f3f4f6', paddingTop: '20px', marginTop: '30px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <i className="fas fa-clipboard-check" style={{ color: '#3ca203' }} />
+            Evaluación Final 
+          </h3>
+          <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ background: '#f9fafb', padding: '12px 20px', borderRadius: '8px' }}>
+              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>Nota Empresa</p>
+              <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px', color: '#3ca203' }}>{proceso.nota_empresa != null ? proceso.nota_empresa : 'Sin evaluar'}</p>
+            </div>
+            <div style={{ background: '#f9fafb', padding: '12px 20px', borderRadius: '8px' }}>
+              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>Nota Instructor</p>
+              <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px', color: '#3ca203' }}>{proceso.nota_instructor != null ? proceso.nota_instructor : 'Sin evaluar'}</p>
+            </div>
+            <div style={{ background: '#f9fafb', padding: '12px 20px', borderRadius: '8px' }}>
+              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>Estado SOFIA-HEC</p>
+              <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px', color: '#3ca203' }}>{proceso.estado_sofia || 'PENDIENTE'}</p>
+            </div>
+            <button onClick={() => setIsModalOpen(true)} style={{ background: '#3ca203', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <i className="fas fa-edit" /> Registrar / Actualizar Evaluación
+            </button>
+          </div>
+        </div>
+
+
         {/* ==================== BOTÓN VOLVER ==================== */}
         <div
           style={{
@@ -549,6 +578,17 @@ const DetalleAprendiz = () => {
           </button>
         </div>
       </div>
+
+      {/* RF-050: Modal de Evaluación Final */}
+      <EvaluacionFinalModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        proceso={proceso}
+        onSuccess={() => {
+          setIsModalOpen(false);
+          window.location.reload();
+        }}
+      />
     </div>
   );
 };

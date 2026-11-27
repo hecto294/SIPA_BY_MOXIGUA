@@ -1,4 +1,4 @@
-// src/core/services/authService.js
+﻿// src/core/services/authService.js
 import { apiClient } from '../api/client';
 import { API_ENDPOINTS } from '../api/endpoints';
 
@@ -56,7 +56,7 @@ export const authService = {
   requestPasswordReset: async (email) =>
     apiClient.post(API_ENDPOINTS.AUTH.REQUEST_RESET, { email }),
   resendVerificationCode: async (email) =>
-    apiClient.post(API_ENDPOINTS.AUTH.REQUEST_RESET, { email }),
+    apiClient.post(API_ENDPOINTS.AUTH.RESEND_CODE, { email }),
   verifyResetCode: async (email, code) =>
     apiClient.post(API_ENDPOINTS.AUTH.VERIFY_CODE, { email, codigo: code }),
   resetPassword: async (email, code, newPassword) =>

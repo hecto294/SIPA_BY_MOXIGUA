@@ -100,10 +100,10 @@ const CharlasProgramadas = () => {
         '<p style="color:#6b7280;font-size:14px;margin-bottom:15px;">' + charla.tema + '</p>' +
         '<div style="margin-bottom:15px;">' +
         '<label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Nueva Fecha *</label>' +
-        '<input id="editFecha" type="date" min="' + getFechaHoy() + '" value="' + fechaStr + '" class="swal2-input" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>' +
+        '<input id="editFecha" type="date" min="' + getFechaHoy() + '" value="' + fechaStr + '" class="swal2-input" style="width:100%;box-sizing:border-box;margin:0;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>' +
         '<div style="margin-bottom:15px;">' +
         '<label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Nueva Hora *</label>' +
-        '<input id="editHora" type="time" value="' + horaStr + '" class="swal2-input" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div></div>',
+        '<input id="editHora" type="time" value="' + horaStr + '" class="swal2-input" style="width:100%;box-sizing:border-box;margin:0;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div></div>',
       focusConfirm: false,
       confirmButtonText: 'Guardar Cambios',
       confirmButtonColor: '#3ca203',
@@ -174,26 +174,26 @@ const CharlasProgramadas = () => {
       html: '<div style="text-align:left;padding:10px 0;">' +
         '<div style="margin-bottom:15px;">' +
         '<label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Nombre *</label>' +
-        '<input id="temaCharla" class="swal2-input" placeholder="Ej. Normatividad SENA" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>' +
+        '<input id="temaCharla" class="swal2-input" placeholder="Ej. Normatividad SENA" style="width:100%;box-sizing:border-box;margin:0;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>' +
         '<div style="margin-bottom:15px;">' +
         '<label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Tipo *</label>' +
-        '<select id="tipoCharla" class="swal2-input" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;">' +
+        '<select id="tipoCharla" class="swal2-input" style="width:100%;box-sizing:border-box;margin:0;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;">' +
         '<option value="CHARLA_INICIAL">Charla Inicial</option>' +
         '<option value="CHARLA_PRE_PRODUCTIVA">Charla Pre-Productiva</option></select></div>' +
         '<div style="margin-bottom:15px;">' +
         '<label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Ficha *</label>' +
-        '<select id="fichaCharla" class="swal2-input" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;">' +
+        '<select id="fichaCharla" class="swal2-input" style="width:100%;box-sizing:border-box;margin:0;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;">' +
         opcionesFichas + '</select></div>' +
         '<div style="display:flex;gap:10px;margin-bottom:15px;">' +
-        '<div style="flex:1;"><label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Fecha *</label>' +
-        '<input id="fechaCharla" type="date" min="' + getFechaHoy() + '" class="swal2-input" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>' +
-        '<div style="flex:1;"><label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Hora *</label>' +
-        '<input id="horaCharla" type="time" class="swal2-input" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div></div>' +
+        '<div style="flex:1;min-width:0;"><label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Fecha *</label>' +
+        '<input id="fechaCharla" type="date" min="' + getFechaHoy() + '" class="swal2-input" style="width:100%;box-sizing:border-box;margin:0;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>' +
+        '<div style="flex:1;min-width:0;"><label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Hora *</label>' +
+        '<input id="horaCharla" type="time" class="swal2-input" style="width:100%;box-sizing:border-box;margin:0;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div></div>' +
         '<div style="display:flex;gap:10px;margin-bottom:15px;">' +
-        '<div style="flex:1;"><label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Duracion (h)</label>' +
-        '<input id="duracionCharla" type="number" step="0.5" min="0.5" value="2" class="swal2-input" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>' +
-        '<div style="flex:1;"><label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Solicitadas</label>' +
-        '<input id="personasCharla" type="number" min="0" value="0" class="swal2-input" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>' +
+        '<div style="flex:1;min-width:0;"><label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Duracion (h)</label>' +
+        '<input id="duracionCharla" type="number" step="0.5" min="0.5" value="2" class="swal2-input" style="width:100%;box-sizing:border-box;margin:0;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>' +
+        '<div style="flex:1;min-width:0;"><label style="display:block;font-weight:600;margin-bottom:5px;color:#1f2937;font-size:14px;">Solicitadas</label>' +
+        '<input id="personasCharla" type="number" min="0" value="0" class="swal2-input" style="width:100%;box-sizing:border-box;margin:0;padding:10px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;"></div>' +
         '</div></div>',
 
       focusConfirm: false,
@@ -203,6 +203,7 @@ const CharlasProgramadas = () => {
       cancelButtonColor: '#6b7280',
       showCancelButton: true,
       width: '560px',
+      didOpen: (popup) => { const c = popup.querySelector('.swal2-html-container'); if (c) { c.style.display = 'block'; c.style.width = '100%'; c.style.margin = '1em 0 0'; c.style.padding = '0'; c.style.overflow = 'visible'; c.style.textAlign = 'left'; c.style.boxSizing = 'border-box'; } },
       padding: '25px 30px',
       preConfirm: () => {
         const tema = document.getElementById('temaCharla').value.trim();

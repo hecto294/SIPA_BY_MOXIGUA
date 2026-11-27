@@ -5,7 +5,7 @@ import Header from '@/modules/shared/components/Header';
 import SidebarInstructor from '@/modules/instructor/components/SidebarInstructor';
 import '@/App.css';
 
-// PÃ¡ginas
+// Páginas
 import DashboardInstructor from '@/modules/instructor/pages/DashboardInstructor';
 import Calendario from '@/modules/instructor/pages/Calendario';
 import MiPerfil from '@/modules/instructor/pages/MiPerfil';
@@ -18,6 +18,7 @@ import BitacorasPorBimestre from '@/modules/instructor/pages/BitacorasPorBimestr
 import EditarCharla from '@/modules/instructor/pages/EditarCharla';
 import DetalleCharla from '@/modules/instructor/pages/DetalleCharla';
 import NovedadesInstructor from '@/modules/instructor/pages/NovedadesInstructor';
+import HistorialAlertas from '@/shared/components/HistorialAlertas';
 
 // Componentes
 import Fichas from '@/modules/instructor/components/Fichas';
@@ -37,7 +38,7 @@ const LayoutInstructor = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ðŸ”¥ Leer usuario real del localStorage
+  // 🔥 Leer usuario real del localStorage
   useEffect(() => {
     try {
       const stored = localStorage.getItem('user');
@@ -77,6 +78,8 @@ const LayoutInstructor = () => {
     else if (path.includes('/reportes-finales')) setActivePage('reportes-finales');
     else if (path.includes('/empresas')) setActivePage('empresas');
     else if (path.includes('/aprendices')) setActivePage('aprendices');
+    else if (path.includes('/calendario')) setActivePage('calendario');
+    else if (path.includes('/evento')) setActivePage('calendario');
   }, [location.pathname]);
 
   const handleSidebarClick = (pageId) => {
@@ -90,7 +93,7 @@ const LayoutInstructor = () => {
         notifications={[]}
       />
       <div className="main-body">
-        <SidebarInstructor setActivePage={handleSidebarClick} />
+        <SidebarInstructor key={location.pathname} setActivePage={handleSidebarClick} />
         <div className="content-area" style={{ padding: '30px', boxSizing: 'border-box', backgroundColor: '#f6f8fa' }}>
           <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
             <Routes>
@@ -112,6 +115,7 @@ const LayoutInstructor = () => {
               <Route path="/novedades" element={<NovedadesInstructor />} />
               <Route path="/bitacora/aprendiz/:aprendizId" element={<DetalleAprendizBitacoras />} />
               <Route path="/bitacora/aprendiz/:aprendizId/bimestre/:bimestre" element={<BitacorasPorBimestre />} />
+              <Route path="/historial-alertas" element={<HistorialAlertas rutaVolver="/instructor" />} />
               <Route path="/mi-perfil" element={<MiPerfil />} />
               <Route path="/calendario" element={<Calendario />} />
               <Route path="/seguimientos" element={<Seguimientos />} />

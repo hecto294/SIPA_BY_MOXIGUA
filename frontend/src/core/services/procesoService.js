@@ -74,6 +74,11 @@ export const procesoService = {
       }
     );
   },
+
+  // RF-050: Registrar evaluacion final (notas y estado SOFIA)
+  registrarEvaluacionFinal: async (procesoId, data) => {
+    return await apiClient.patch(`/procesos/${procesoId}/evaluacion`, data);
+  },
 };
 
 export default procesoService;
