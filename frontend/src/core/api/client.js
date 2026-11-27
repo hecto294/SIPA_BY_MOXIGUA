@@ -1,7 +1,20 @@
-﻿// src/core/api/client.js
+// src/core/api/client.js
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const getToken = () => localStorage.getItem('token');
+
+// FastAPI devuelve `detail` como texto (errores HTTP) o como lista (422 de validación)
+const formatErrorDetail = (detail) => {
+  if (!detail) return '';
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((d) => (d.msg || '').replace(/^Value error, /, ''))
+      .filter(Boolean)
+      .join('. ');
+  }
+  return '';
+};
 
 const handleResponse = async (response) => {
   // 🔥 SOLO redirigir al login si es 401 Y el usuario tenía token
@@ -26,21 +39,19 @@ const handleResponse = async (response) => {
   
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || error.message || 'Error en la petición');
+    throw new Error(formatErrorDetail(error.detail) || error.message || 'Error en la petición');
   }
   
   if (response.status === 204) return null;
   return response.json();
 };
 
-const getHeaders = (customHeaders = {}, isFormData = false) => {
+const getHeaders = (customHeaders = {}) => {
   const token = getToken();
   const headers = {
     'Content-Type': 'application/json',
     ...customHeaders,
   };
-  // Con FormData el navegador pone el Content-Type (con el boundary) por sí solo
-  if (isFormData) delete headers['Content-Type'];
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -70,11 +81,10 @@ export const apiClient = {
 
   post: async (endpoint, data = {}, options = {}) => {
     const url = buildUrl(endpoint, options.params);
-    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
     const response = await fetch(url, {
       method: 'POST',
-      headers: getHeaders(options.headers, isFormData),
-      body: isFormData ? data : JSON.stringify(data),
+      headers: getHeaders(options.headers),
+      body: JSON.stringify(data),
     });
     return handleResponse(response);
   },

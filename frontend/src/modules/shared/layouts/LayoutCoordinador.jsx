@@ -37,6 +37,9 @@ import CentrosFormacion from "@/modules/coordinador/pages/CentrosFormacion";
 // 🔥 Soportes (compartida con admin)
 import Soportes from "@/modules/shared/pages/Novedades";
 
+// 🔥 Crear proceso de aprendiz (tarea 6)
+import CrearProceso from "@/modules/coordinador/pages/CrearProceso";
+
 const LayoutCoordinador = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -61,13 +64,14 @@ const LayoutCoordinador = () => {
 
   let activePage = 'dashboard';
   if (location.pathname.includes('/parametrizacion')) activePage = 'parametrizacion';
+  else if (location.pathname.includes('/procesos/nuevo')) activePage = 'crear-proceso';
   else if (location.pathname.includes('/fichas')) activePage = 'fichas';
   else if (location.pathname.includes('/cartas-presentacion')) activePage = 'cartas-presentacion';
   else if (location.pathname.includes('/reportes')) activePage = 'reportes';
   else if (location.pathname.includes('/reporte-bitacoras')) activePage = 'reporte-bitacoras';
   else if (location.pathname.includes('/instructores-ep')) activePage = 'instructores-ep';
   else if (location.pathname.includes('/centros-formacion')) activePage = 'centros-formacion';
-  else if (location.pathname.includes('/soportes')) activePage = 'soportes'; // 🔥 NUEVO
+  else if (location.pathname.includes('/soportes')) activePage = 'soportes';
   else if (location.pathname.includes('/empresas')) activePage = 'empresas';
   else if (location.pathname.includes('/aprendices')) activePage = 'aprendices';
   else if (location.pathname.includes('/instructores')) activePage = 'instructores';
@@ -113,7 +117,10 @@ const LayoutCoordinador = () => {
             <Route path="/fichas-parametrizacion" element={<FichasParametrizacion />} />
             <Route path="/aprendices-ficha/:idFicha" element={<AprendicesFicha />} />
 
-            {/* 🔥 Ruta de Soportes (NUEVO) */}
+            {/* 🔥 Crear proceso de aprendiz */}
+            <Route path="/procesos/nuevo" element={<CrearProceso />} />
+
+            {/* 🔥 Ruta de Soportes */}
             <Route path="/soportes" element={<Soportes />} />
           </Routes>
         </div>

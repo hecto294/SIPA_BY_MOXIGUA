@@ -62,6 +62,12 @@ const SidebarInstructor = ({ setActivePage }) => {
           >
             <i className="fas fa-building"></i> Empresas
           </li>
+          <li
+  className={activeItem === 'novedades' ? 'active' : ''}
+  onClick={() => handleNavigation('novedades', '/instructor/novedades')}
+>
+  <i className="fas fa-bullhorn"></i> Novedades
+</li>
 
           {/* CHARLAS */}
           <li 

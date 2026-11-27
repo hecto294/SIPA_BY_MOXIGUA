@@ -17,6 +17,7 @@ import DetalleAprendizBitacoras from '@/modules/instructor/pages/DetalleAprendiz
 import BitacorasPorBimestre from '@/modules/instructor/pages/BitacorasPorBimestre';
 import EditarCharla from '@/modules/instructor/pages/EditarCharla';
 import DetalleCharla from '@/modules/instructor/pages/DetalleCharla';
+import NovedadesInstructor from '@/modules/instructor/pages/NovedadesInstructor';
 
 // Componentes
 import Fichas from '@/modules/instructor/components/Fichas';
@@ -108,6 +109,7 @@ const LayoutInstructor = () => {
               <Route path="/reportes-finales" element={<ReportesFinales />} />
               <Route path="/empresas" element={<Empresas />} />
               <Route path="/aprendices" element={<Aprendices />} />
+              <Route path="/novedades" element={<NovedadesInstructor />} />
               <Route path="/bitacora/aprendiz/:aprendizId" element={<DetalleAprendizBitacoras />} />
               <Route path="/bitacora/aprendiz/:aprendizId/bimestre/:bimestre" element={<BitacorasPorBimestre />} />
               <Route path="/mi-perfil" element={<MiPerfil />} />

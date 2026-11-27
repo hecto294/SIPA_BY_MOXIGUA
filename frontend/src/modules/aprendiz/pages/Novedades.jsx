@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import Breadcrumb from '../../shared/components/Breadcrumb';
 import { apiClient } from '@/core/api/client';
 import { validarPdf } from '@/core/utils/validarPdf';
+import novedadesService from '@/core/services/novedadesService';
 
 const Novedades = () => {
   const [novedades, setNovedades] = useState([]);
@@ -11,79 +12,127 @@ const Novedades = () => {
   const [error, setError] = useState(null);
 
   // ==========================================================
-  // CARGAR NOVEDADES DEL BACKEND
+  // HELPERS
   // ==========================================================
-  useEffect(() => {
-    cargarNovedades();
-  }, []);
+  const tituloDesdeTipo = (tipo) => {
+    const map = {
+      INCAPACIDAD: 'Incapacidad médica',
+      RENUNCIA: 'Renuncia',
+      CAMBIO_EMPRESA: 'Cambio de empresa',
+      PRORROGA: 'Prórroga',
+      OTRO: 'Otro',
+    };
+    return map[tipo] || tipo || 'Novedad';
+  };
 
+  const tipoBonito = (tipo) => {
+    const map = {
+      INCAPACIDAD: 'Incapacidad',
+      RENUNCIA: 'Renuncia',
+      CAMBIO_EMPRESA: 'Cambio de empresa',
+      PRORROGA: 'Prórroga',
+      OTRO: 'Otro',
+    };
+    return map[tipo] || tipo || 'Otro';
+  };
+
+  const formatearFecha = (fecha) => {
+    if (!fecha) return '-';
+    try {
+      const d = typeof fecha === 'string' ? new Date(fecha) : fecha;
+      return d.toLocaleDateString('es-ES');
+    } catch {
+      return fecha;
+    }
+  };
+
+  // ==========================================================
+  // CARGAR NOVEDADES
+  // ==========================================================
   const cargarNovedades = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiClient.get('/usuarios/me/novedades');
-      console.log('📢 Novedades reales:', data);
 
-      const novedadesFormateadas = (data.novedades || []).map(n => ({
+      // Intentar endpoint del usuario
+      let data = null;
+      try {
+        data = await apiClient.get('/usuarios/me/novedades');
+      } catch {
+        // Fallback: obtener proceso y listar novedades del proceso
+        const me = await apiClient.get('/usuarios/me');
+        const procesos = await apiClient.get('/procesos', {
+          params: { aprendiz_id: me.id, solo_activos: true },
+        });
+        const lista = Array.isArray(procesos) ? procesos : (procesos?.items || []);
+        if (lista.length > 0) {
+          const novedadesProceso = await novedadesService.listarPorProceso(lista[0].id);
+          data = { novedades: Array.isArray(novedadesProceso) ? novedadesProceso : [] };
+        } else {
+          data = { novedades: [] };
+        }
+      }
+
+      const novedadesFormateadas = (data?.novedades || []).map((n) => ({
         id: n.id,
-        titulo: tituloDesdeTipo(n.tipo),
+        titulo: tituloDesdeTipo(n.tipo_novedad || n.tipo),
         descripcion: n.descripcion,
-        fecha: formatearFecha(n.fecha),
-        tipo: tipoBonito(n.tipo),
-        estado: n.estado || 'Pendiente',
-        archivo: n.archivo,
-        documento_soporte_url: n.documento_soporte_url,
+        fecha: formatearFecha(n.fecha_novedad || n.fecha),
+        tipo: tipoBonito(n.tipo_novedad || n.tipo),
+        estado: n.estado || 'Registrada',
+        archivo: n.archivo || null,
+        documento_soporte_url: n.documento_soporte_url || null,
       }));
 
       setNovedades(novedadesFormateadas);
     } catch (err) {
       console.error('Error al cargar novedades:', err);
       setError(err.message || 'Error al cargar las novedades');
+      setNovedades([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Helpers
-  const tituloDesdeTipo = (tipo) => {
-    const map = {
-      RENUNCIA: 'Renuncia',
-      INCAPACIDAD: 'Incapacidad médica',
-      CAMBIO_EMPRESA: 'Cambio de empresa',
-      PRORROGA: 'Prórroga',
-      OTRO: 'Otra novedad',
-    };
-    return map[tipo] || tipo;
-  };
-
-  const tipoBonito = (tipo) => {
-    const map = {
-      RENUNCIA: 'Renuncia',
-      INCAPACIDAD: 'Incapacidad médica',
-      CAMBIO_EMPRESA: 'Cambio de empresa',
-      PRORROGA: 'Prórroga',
-      OTRO: 'Otro',
-    };
-    return map[tipo] || tipo;
-  };
-
-  const formatearFecha = (fechaStr) => {
-    if (!fechaStr) return '—';
-    try {
-      const d = new Date(fechaStr);
-      const dia = String(d.getDate()).padStart(2, '0');
-      const mes = String(d.getMonth() + 1).padStart(2, '0');
-      const anio = d.getFullYear();
-      return `${dia}/${mes}/${anio}`;
-    } catch {
-      return fechaStr;
-    }
-  };
+  useEffect(() => {
+    cargarNovedades();
+  }, []);
 
   // ==========================================================
   // REPORTAR NUEVA NOVEDAD
   // ==========================================================
-  const handleNuevaNovedad = () => {
+  const handleNuevaNovedad = async () => {
+    // Obtener el proceso activo del aprendiz
+    let procesoId = null;
+    try {
+      const me = await apiClient.get('/usuarios/me');
+      if (me?.proceso_activo_id) {
+        procesoId = me.proceso_activo_id;
+      } else {
+        const procesos = await apiClient.get('/procesos', {
+          params: { aprendiz_id: me.id, solo_activos: true },
+        });
+        const lista = Array.isArray(procesos) ? procesos : (procesos?.items || []);
+        if (lista.length > 0) {
+          procesoId = lista[0].id;
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+
+    if (!procesoId) {
+      Swal.fire({
+        title: 'Sin proceso activo',
+        text: 'No se encontró un proceso de etapa productiva activo para registrar la novedad.',
+        icon: 'warning',
+        confirmButtonColor: '#f59e0b',
+      });
+      return;
+    }
+
+    const hoy = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
     Swal.fire({
       title: '📢 Reportar Novedad',
       html: `
@@ -100,12 +149,30 @@ const Novedades = () => {
               <option value="OTRO">Otro</option>
             </select>
           </div>
+
+          <div style="margin-bottom: 15px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #1f2937; font-size: 14px;">
+              <i class="fas fa-calendar-alt" style="color: #3ca203; margin-right: 8px;"></i> Fecha de la novedad
+            </label>
+            <input 
+              type="date" 
+              id="fechaNovedad" 
+              value="${hoy}"
+              class="swal2-input" 
+              style="width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px;"
+            />
+            <p style="font-size: 12px; color: #6b7280; margin: 4px 0 0 0;">
+              Por defecto es la fecha de hoy. Puedes cambiarla si es necesario.
+            </p>
+          </div>
+
           <div style="margin-bottom: 15px;">
             <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #1f2937; font-size: 14px;">
               <i class="fas fa-align-left" style="color: #3ca203; margin-right: 8px;"></i> Justificación / Descripción *
             </label>
             <textarea id="descripcionNovedad" class="swal2-textarea" placeholder="Describe el motivo de tu novedad..." style="width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; min-height: 100px;"></textarea>
           </div>
+
           <div style="margin-bottom: 15px;">
             <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #1f2937; font-size: 14px;">
               <i class="fas fa-paperclip" style="color: #3ca203; margin-right: 8px;"></i> Adjuntar evidencia (PDF - opcional)
@@ -123,6 +190,7 @@ const Novedades = () => {
       cancelButtonColor: '#6b7280',
       showCancelButton: true,
       width: '520px',
+      showLoaderOnConfirm: true,
 
       didOpen: () => {
         const input = document.getElementById('archivoNovedad');
@@ -135,7 +203,10 @@ const Novedades = () => {
             if (!f) return;
             const r = await validarPdf(f, 5);
             if (!r.ok) {
-              if (errorMsg) { errorMsg.textContent = r.msg; errorMsg.style.display = 'block'; }
+              if (errorMsg) {
+                errorMsg.textContent = r.msg;
+                errorMsg.style.display = 'block';
+              }
               input.value = '';
             } else {
               if (errorMsg) errorMsg.style.display = 'none';
@@ -146,6 +217,7 @@ const Novedades = () => {
 
       preConfirm: async () => {
         const tipo = document.getElementById('tipoNovedad').value;
+        const fecha = document.getElementById('fechaNovedad').value;
         const descripcion = document.getElementById('descripcionNovedad').value.trim();
         const archivoInput = document.getElementById('archivoNovedad');
         const archivo = archivoInput.files[0];
@@ -160,31 +232,44 @@ const Novedades = () => {
         }
         if (archivo) {
           const r = await validarPdf(archivo, 5);
-          if (!r.ok) { Swal.showValidationMessage(r.msg); return false; }
+          if (!r.ok) {
+            Swal.showValidationMessage(r.msg);
+            return false;
+          }
         }
 
-        return { tipo, descripcion, archivo: archivo ? archivo.name : null };
-      }
+        try {
+          const payload = {
+            tipo_novedad: tipo,
+            fecha_novedad: fecha || hoy,
+            descripcion: descripcion,
+          };
+
+          const creada = await novedadesService.crear(procesoId, payload);
+
+          return {
+            id: creada.id,
+            tipo: tipo,
+            descripcion: descripcion,
+            fecha: creada.fecha_novedad || fecha || hoy,
+            archivo: archivo ? archivo.name : null,
+          };
+        } catch (err) {
+          Swal.showValidationMessage(err.message || 'No se pudo registrar la novedad');
+          return false;
+        }
+      },
     }).then((result) => {
       if (result.isConfirmed && result.value) {
-        const nuevaNovedad = {
-          id: Date.now(),
-          titulo: tituloDesdeTipo(result.value.tipo),
-          descripcion: result.value.descripcion,
-          tipo: tipoBonito(result.value.tipo),
-          fecha: formatearFecha(new Date()),
-          estado: 'Pendiente',
-          archivo: result.value.archivo,
-        };
+        cargarNovedades();
 
-        setNovedades([nuevaNovedad, ...novedades]);
         Swal.fire({
           title: '✅ Novedad reportada',
-          text: 'Tu novedad ha sido enviada al coordinador.',
+          text: 'Tu novedad ha sido enviada y guardada correctamente.',
           icon: 'success',
           confirmButtonColor: '#3ca203',
-          timer: 2000,
-          timerProgressBar: true
+          timer: 2200,
+          timerProgressBar: true,
         });
       }
     });
@@ -194,17 +279,16 @@ const Novedades = () => {
   // VER ARCHIVO
   // ==========================================================
   const handleVerArchivo = (novedad) => {
-    if (!novedad.archivo) {
+    if (!novedad.archivo && !novedad.documento_soporte_url) {
       Swal.fire({
         title: '⚠️ Sin archivo adjunto',
         text: 'Esta novedad no tiene archivo adjunto.',
         icon: 'warning',
-        confirmButtonColor: '#f59e0b'
+        confirmButtonColor: '#f59e0b',
       });
       return;
     }
 
-    // Si hay URL real, abrirla
     if (novedad.documento_soporte_url) {
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const url = novedad.documento_soporte_url.startsWith('http')
@@ -216,71 +300,22 @@ const Novedades = () => {
 
     Swal.fire({
       title: `📄 ${novedad.archivo}`,
-      html: `
-        <div style="text-align: left; padding: 10px 0;">
-          <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px; padding: 12px; background: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0;">
-            <i class="fas fa-file-pdf" style="font-size: 40px; color: #dc2626;"></i>
-            <div>
-              <p style="margin: 0; font-size: 14px; font-weight: 600; color: #1f2937;">${novedad.archivo}</p>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: #6b7280;">
-                <i class="fas fa-check-circle" style="color: #10b981;"></i> Cargado correctamente
-              </p>
-            </div>
-          </div>
-          <div style="margin-bottom: 10px;">
-            <p style="margin: 0; font-size: 13px; color: #6b7280;"><strong>Tipo:</strong> ${novedad.tipo}</p>
-            <p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280;"><strong>Novedad:</strong> ${novedad.titulo}</p>
-            <p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280;"><strong>Fecha:</strong> ${novedad.fecha}</p>
-            <p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280;"><strong>Estado:</strong> ${novedad.estado}</p>
-          </div>
-          <div style="margin-top: 15px; padding-top: 12px; border-top: 1px dashed #e5e7eb; text-align: center; font-size: 13px; color: #9ca3af;">
-            <i class="fas fa-info-circle"></i> El archivo aún no está disponible en el servidor
-          </div>
-        </div>
-      `,
+      text: 'El archivo está registrado, pero no hay URL disponible para abrirlo.',
       icon: 'info',
-      confirmButtonText: '📥 Descargar archivo',
       confirmButtonColor: '#3ca203',
-      showCancelButton: true,
-      cancelButtonText: '❌ Cerrar',
-      cancelButtonColor: '#6b7280',
-      width: '500px'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        Swal.fire({
-          title: '✅ Descarga iniciada',
-          text: `El archivo "${novedad.archivo}" se está descargando.`,
-          icon: 'success',
-          confirmButtonColor: '#3ca203',
-          timer: 2000,
-          timerProgressBar: true
-        });
-      }
     });
   };
 
-  const getColorEstado = (estado) => {
-    if (estado === 'Aprobada') return '#10b981';
-    if (estado === 'Rechazada') return '#ef4444';
-    return '#f59e0b';
-  };
-
-  const getIconoEstado = (estado) => {
-    if (estado === 'Aprobada') return 'fa-check-circle';
-    if (estado === 'Rechazada') return 'fa-times-circle';
-    return 'fa-clock';
-  };
-
   // ==========================================================
-  // RENDER: LOADING / ERROR
+  // ESTADOS DE CARGA / ERROR
   // ==========================================================
   if (loading) {
     return (
       <div className="novedades-container" style={{ width: '100%', padding: '20px 0' }}>
         <Breadcrumb />
-        <div style={{ padding: '60px', textAlign: 'center', color: '#6b7280' }}>
-          <i className="fas fa-spinner fa-spin" style={{ fontSize: '32px', color: '#3ca203' }}></i>
-          <p style={{ marginTop: '15px' }}>Cargando novedades...</p>
+        <div style={{ padding: '60px', textAlign: 'center' }}>
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: '40px', color: '#3ca203' }}></i>
+          <p style={{ marginTop: '15px', color: '#6b7280' }}>Cargando novedades...</p>
         </div>
       </div>
     );
@@ -296,7 +331,15 @@ const Novedades = () => {
           <p style={{ color: '#6b7280' }}>{error}</p>
           <button
             onClick={cargarNovedades}
-            style={{ background: '#3ca203', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', marginTop: '15px' }}
+            style={{
+              background: '#3ca203',
+              color: 'white',
+              border: 'none',
+              padding: '10px 20px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              marginTop: '15px',
+            }}
           >
             Reintentar
           </button>
@@ -310,14 +353,22 @@ const Novedades = () => {
   // ==========================================================
   return (
     <div className="novedades-container" style={{ width: '100%', padding: '20px 0' }}>
-      
-      {/* ========== MIGA DE PAN ========== */}
       <Breadcrumb />
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', marginTop: '10px' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px',
+          marginTop: '10px',
+        }}
+      >
         <div>
           <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>Novedades</h2>
-          <p style={{ color: '#6b7280', margin: '5px 0 0 0' }}>Reporta y visualiza las novedades de tu proceso.</p>
+          <p style={{ color: '#6b7280', margin: '5px 0 0 0' }}>
+            Reporta y visualiza las novedades de tu proceso.
+          </p>
         </div>
         <button
           onClick={handleNuevaNovedad}
@@ -331,14 +382,22 @@ const Novedades = () => {
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '8px',
           }}
         >
           <i className="fas fa-plus" /> Reportar Novedad
         </button>
       </div>
 
-      <div style={{ marginBottom: '20px', background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+      <div
+        style={{
+          marginBottom: '20px',
+          background: '#f8fafc',
+          padding: '15px',
+          borderRadius: '8px',
+          border: '1px solid #e5e7eb',
+        }}
+      >
         <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
           <i className="fas fa-info-circle" style={{ color: '#3ca203', marginRight: '8px' }} />
           Las novedades reportadas serán revisadas por el Coordinador de Etapa Productiva.
@@ -348,55 +407,83 @@ const Novedades = () => {
       {novedades.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px' }}>
           <i className="fas fa-folder-open" style={{ fontSize: '48px', color: '#9ca3af' }}></i>
-          <h3 style={{ color: '#6b7280' }}>No tienes novedades reportadas</h3>
+          <h3 style={{ color: '#6b7280', marginTop: '15px' }}>No tienes novedades registradas</h3>
+          <p style={{ color: '#9ca3af' }}>
+            Haz clic en “Reportar Novedad” para crear la primera.
+          </p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-          {novedades.map((novedad) => (
-            <div key={novedad.id} style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #e5e7eb' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h4 style={{ margin: 0, color: '#1f2937' }}>{novedad.titulo}</h4>
-                <span style={{
-                  background: `${getColorEstado(novedad.estado)}15`,
-                  color: getColorEstado(novedad.estado),
-                  padding: '4px 12px',
-                  borderRadius: '20px',
-                  fontSize: '12px',
-                  fontWeight: 'bold'
-                }}>
-                  <i className={`fas ${getIconoEstado(novedad.estado)}`}></i> {novedad.estado}
-                </span>
-              </div>
-              <div style={{ marginBottom: '10px' }}>
-                <span style={{
-                  background: '#e6f7ed',
-                  color: '#047857',
-                  padding: '4px 12px',
-                  borderRadius: '20px',
-                  fontSize: '12px',
-                  fontWeight: 'bold'
-                }}>
-                  <i className="fas fa-tags"></i> {novedad.tipo}
-                </span>
-              </div>
-              <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 10px 0' }}>{novedad.descripcion}</p>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', borderTop: '1px solid #e5e7eb', paddingTop: '10px' }}>
-                <span style={{ fontSize: '12px', color: '#9ca3af' }}>
-                  <i className="fas fa-calendar-alt" style={{ marginRight: '4px' }}></i>
-                  {novedad.fecha}
-                </span>
-                {novedad.archivo && (
-                  <button
-                    onClick={() => handleVerArchivo(novedad)}
-                    style={{ fontSize: '12px', color: '#3ca203', background: 'none', border: 'none', cursor: 'pointer' }}
-                  >
-                    <i className="fas fa-paperclip" style={{ marginRight: '4px' }}></i>
-                    {novedad.archivo}
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+        <div
+          style={{
+            background: 'white',
+            borderRadius: '12px',
+            border: '1px solid #e5e7eb',
+            overflow: 'hidden',
+          }}
+        >
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '13px', color: '#6b7280' }}>
+                  Tipo
+                </th>
+                <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '13px', color: '#6b7280' }}>
+                  Descripción
+                </th>
+                <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '13px', color: '#6b7280' }}>
+                  Fecha
+                </th>
+                <th style={{ padding: '14px 16px', textAlign: 'left', fontSize: '13px', color: '#6b7280' }}>
+                  Estado
+                </th>
+                <th style={{ padding: '14px 16px', textAlign: 'center', fontSize: '13px', color: '#6b7280' }}>
+                  Archivo
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {novedades.map((n) => (
+                <tr key={n.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                  <td style={{ padding: '14px 16px', fontWeight: 600 }}>{n.tipo}</td>
+                  <td style={{ padding: '14px 16px', color: '#374151', maxWidth: '320px' }}>
+                    {n.descripcion}
+                  </td>
+                  <td style={{ padding: '14px 16px', color: '#6b7280' }}>{n.fecha}</td>
+                  <td style={{ padding: '14px 16px' }}>
+                    <span
+                      style={{
+                        background: '#d1fae5',
+                        color: '#065f46',
+                        padding: '4px 10px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {n.estado}
+                    </span>
+                  </td>
+                  <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                    {(n.archivo || n.documento_soporte_url) && (
+                      <button
+                        onClick={() => handleVerArchivo(n)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#3ca203',
+                          cursor: 'pointer',
+                          fontSize: '16px',
+                        }}
+                        title="Ver archivo"
+                      >
+                        <i className="fas fa-paperclip" />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

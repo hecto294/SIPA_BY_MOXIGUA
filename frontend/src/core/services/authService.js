@@ -1,4 +1,4 @@
-﻿// src/core/services/authService.js
+// src/core/services/authService.js
 import { apiClient } from '../api/client';
 import { API_ENDPOINTS } from '../api/endpoints';
 
@@ -52,10 +52,17 @@ export const authService = {
 
   isAuthenticated: () => !!localStorage.getItem('token'),
 
-  requestPasswordReset: async (email) => apiClient.post(API_ENDPOINTS.AUTH.REQUEST_RESET, { email }),
-  verifyResetCode: async (email, code) => apiClient.post(API_ENDPOINTS.AUTH.VERIFY_CODE, { email, code }),
-  resetPassword: async (email, code, newPassword) => apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { email, code, newPassword }),
-  changePassword: async (currentPassword, newPassword) => apiClient.post(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, { currentPassword, newPassword }),
+  // Recuperación de contraseña (los nombres de campo deben coincidir con el backend)
+  requestPasswordReset: async (email) =>
+    apiClient.post(API_ENDPOINTS.AUTH.REQUEST_RESET, { email }),
+  resendVerificationCode: async (email) =>
+    apiClient.post(API_ENDPOINTS.AUTH.REQUEST_RESET, { email }),
+  verifyResetCode: async (email, code) =>
+    apiClient.post(API_ENDPOINTS.AUTH.VERIFY_CODE, { email, codigo: code }),
+  resetPassword: async (email, code, newPassword) =>
+    apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { email, codigo: code, nueva_password: newPassword }),
+  changePassword: async (currentPassword, newPassword) =>
+    apiClient.post(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, { password_actual: currentPassword, password_nueva: newPassword }),
 };
 
 export default authService;

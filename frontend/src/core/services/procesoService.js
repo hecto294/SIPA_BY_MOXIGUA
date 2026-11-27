@@ -2,58 +2,77 @@
 import { apiClient } from '../api/client';
 
 export const procesoService = {
-  // Lista procesos (con filtros opcionales)
   getProcesos: async (params = {}) => {
     return await apiClient.get('/procesos', { params });
   },
 
-  // Trae un proceso por ID
   getProcesoById: async (id) => {
     return await apiClient.get(`/procesos/${id}`);
   },
 
-  // Actualiza un proceso (PUT)
   updateProceso: async (id, data) => {
     return await apiClient.put(`/procesos/${id}`, data);
   },
 
-  // Trae los datos del aprendiz (nombre, email) dado su ID
   getUsuarioById: async (id) => {
     return await apiClient.get(`/usuarios/${id}`);
   },
 
-  // 🔥 Obtener modalidades (alternativas) del backend
   getModalidades: async () => {
     return await apiClient.get('/modalidades/');
   },
 
-  // 🔥 Asignar alternativa (modalidad) a un proceso
   asignarAlternativa: async (procesoId, modalidadId) => {
     return await apiClient.put(`/procesos/${procesoId}`, {
       modalidad_id: modalidadId,
     });
   },
 
-  // 🔥 Inactivar proceso (retirar de la ficha)
   inactivarProceso: async (procesoId) => {
     return await apiClient.patch(`/procesos/${procesoId}/inactivar`);
   },
 
-  // Novedades del proceso (cambio de ficha, incapacidad, etc.)
-  getNovedades: async (procesoId) => {
-    return await apiClient.get(`/procesos/${procesoId}/novedades`);
-  },
-
-  crearNovedad: async (procesoId, data) => {
-    return await apiClient.post(`/procesos/${procesoId}/novedades`, data);
-  },
-
-  // 🔥 NUEVA FUNCIÓN: Reactivar proceso (volver a vincular)
   reactivarProceso: async (procesoId) => {
     return await apiClient.put(`/procesos/${procesoId}`, {
       is_active: true,
-      estado: "ACTIVO" 
+      estado: 'ACTIVO',
     });
+  },
+
+  createProceso: async (data) => {
+    return await apiClient.post('/procesos', data);
+  },
+
+  // ========== CHECKLIST ==========
+  getChecklist: async (procesoId) => {
+    return await apiClient.get(`/procesos/${procesoId}/checklist`);
+  },
+
+  createChecklistItem: async (procesoId, data) => {
+    return await apiClient.post(`/procesos/${procesoId}/checklist`, data);
+  },
+
+  updateChecklistItem: async (itemId, data) => {
+    return await apiClient.put(`/procesos/checklist/${itemId}`, data);
+  },
+
+  /**
+   * Sube un archivo y lo asocia a un ítem del checklist.
+   * El backend cambia el estado a ENTREGADO automáticamente.
+   */
+  subirEvidenciaChecklist: async (itemId, file) => {
+    const formData = new FormData();
+    formData.append('archivo', file);
+
+    return await apiClient.post(
+      `/procesos/checklist/${itemId}/evidencia`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
   },
 };
 

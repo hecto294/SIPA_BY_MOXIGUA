@@ -6,6 +6,16 @@ import { userService } from '@/core/services/userService';
 import CargaMasivaUsuarios from './CargaMasivaUsuarios';
 import './GestionUsuarios.css';
 
+// Misma política que el backend (validar_fortaleza_password)
+const validarPassword = (p) => {
+  if (p.length < 8) return 'La contraseña debe tener al menos 8 caracteres';
+  if (!/[A-Z]/.test(p)) return 'La contraseña debe tener al menos una mayúscula';
+  if (!/[a-z]/.test(p)) return 'La contraseña debe tener al menos una minúscula';
+  if (!/\d/.test(p)) return 'La contraseña debe tener al menos un número';
+  if (!/[!@#$%^&*(),.?":{}|<>_-]/.test(p)) return 'La contraseña debe tener al menos un carácter especial';
+  return '';
+};
+
 const GestionUsuarios = () => {
   const navigate = useNavigate();
 
@@ -243,8 +253,8 @@ const GestionUsuarios = () => {
             <input id="new-email" type="email" placeholder="juan.perez@sena.edu.co" class="swal-input" />
           </div>
           <div class="swal-form-group">
-            <label class="swal-label">Contraseña * (mín. 6)</label>
-            <input id="new-password" type="password" placeholder="••••••" class="swal-input" />
+            <label class="swal-label">Contraseña * (mín. 8)</label>
+            <input id="new-password" type="password" placeholder="Mín. 8, Aa, 1, símbolo" class="swal-input" />
           </div>
           <div class="swal-form-group">
             <label class="swal-label">Rol *</label>
@@ -263,7 +273,7 @@ const GestionUsuarios = () => {
       preConfirm: () => {
         const nombre = document.getElementById('new-nombre').value.trim();
         const apellido = document.getElementById('new-apellido').value.trim();
-        const email = document.getElementById('new-email').value.trim();
+        const email = document.getElementById('new-email').value.trim().toLowerCase();
         const password = document.getElementById('new-password').value;
         const rol_id = parseInt(document.getElementById('new-rol').value);
 
@@ -271,12 +281,21 @@ const GestionUsuarios = () => {
           Swal.showValidationMessage('⚠️ Todos los campos son obligatorios');
           return false;
         }
-        if (!email.includes('@')) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
           Swal.showValidationMessage('⚠️ Correo inválido');
           return false;
         }
-        if (password.length < 6) {
-          Swal.showValidationMessage('⚠️ La contraseña debe tener al menos 6 caracteres');
+        if (usuarios.some((u) => (u.email || '').toLowerCase() === email)) {
+          Swal.showValidationMessage('⚠️ Ya existe un usuario con ese correo');
+          return false;
+        }
+        const errPass = validarPassword(password);
+        if (errPass) {
+          Swal.showValidationMessage(`⚠️ ${errPass}`);
+          return false;
+        }
+        if (!rol_id) {
+          Swal.showValidationMessage('⚠️ Selecciona un rol');
           return false;
         }
         return { nombre, apellido, email, password, rol_id };

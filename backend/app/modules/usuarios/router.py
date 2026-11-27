@@ -677,10 +677,12 @@ from fastapi.responses import StreamingResponse
 def bulk_upload_usuarios(
     file: UploadFile = File(..., description="Excel (.xlsx) o CSV con usuarios"),
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_admin)
+    current_user: Usuario = Depends(require_role(Roles.ADMIN, Roles.COORDINADOR))
 ):
-    """Carga masiva de usuarios desde Excel/CSV."""
-    if not file.filename.lower().endswith((".xlsx", ".xls", ".csv")):
+    """Carga masiva de usuarios desde Excel/CSV (Admin y Coordinador).
+    Retorna filas insertadas, con advertencia y rechazadas con motivo.
+    """
+    if not file.filename or not file.filename.lower().endswith((".xlsx", ".xls", ".csv")):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Formato no soportado. Use .xlsx, .xls o .csv"
@@ -690,7 +692,7 @@ def bulk_upload_usuarios(
     if len(content) > 10 * 1024 * 1024:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El archivo excede el tamano maximo de 10 MB"
+            detail="El archivo excede el tamaño máximo de 10 MB"
         )
 
     try:
@@ -705,6 +707,12 @@ def bulk_upload_usuarios(
         "message": "Carga masiva completada",
         "filename": file.filename,
         "resultados": resultado,
+        "filas_insertadas": resultado.get("exitosos", 0),
+        "filas_con_advertencia": resultado.get("advertencias", 0),
+        "filas_rechazadas": resultado.get("fallidos", 0),
+        "detalle_advertencias": resultado.get("detalle_advertencias", []),
+        "detalle_rechazadas": resultado.get("errores", []),
+        "total_filas": resultado.get("total", 0),
     }
 
 

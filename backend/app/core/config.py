@@ -86,6 +86,12 @@ class Settings:
         "PASSWORD_RESET_TOKEN_EXPIRE_MINUTES", 30
     )
 
+    # Código de recuperación de contraseña (6 dígitos): minutos de vigencia.
+    # Aplica igual para TODOS los roles.
+    PASSWORD_RESET_CODE_EXPIRE_MINUTES: int = _parse_int_env(
+        "PASSWORD_RESET_CODE_EXPIRE_MINUTES", 5
+    )
+
     # CORS
     CORS_ORIGINS: List[str] = field(
         default_factory=lambda: _parse_cors_origins(

@@ -133,14 +133,23 @@ def cambiar_password(
 
 @router.post("/recuperar-password")
 def recuperar_password(data: schemas.PasswordResetRequest, db: Session = Depends(get_db)):
+    """Solicita código de recuperación (válido para todos los roles). El código vence pasado un tiempo."""
     return crud.solicitar_reset_password(db, data.email)
 
 
 @router.post("/verificar-codigo")
 def verificar_codigo(data: schemas.VerifyCodeRequest, db: Session = Depends(get_db)):
-    return crud.verificar_codigo_reset(db, data.email, data.codigo)
+    """Verifica el código de recuperación. Falla si está expirado o es incorrecto."""
+    try:
+        return crud.verificar_codigo_reset(db, data.email, data.codigo)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/restablecer-password")
 def restablecer_password(data: schemas.PasswordResetConfirm, db: Session = Depends(get_db)):
-    return crud.confirmar_reset_password(db, data.email, data.codigo, data.nueva_password)
+    """Restablece la contraseña usando el código válido y no expirado."""
+    try:
+        return crud.confirmar_reset_password(db, data.email, data.codigo, data.nueva_password)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
