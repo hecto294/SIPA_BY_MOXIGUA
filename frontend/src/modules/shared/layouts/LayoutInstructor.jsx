@@ -17,6 +17,7 @@ import DetalleAprendizBitacoras from '@/modules/instructor/pages/DetalleAprendiz
 import BitacorasPorBimestre from '@/modules/instructor/pages/BitacorasPorBimestre';
 import EditarCharla from '@/modules/instructor/pages/EditarCharla';
 import DetalleCharla from '@/modules/instructor/pages/DetalleCharla';
+import HistorialAlertas from '@/shared/components/HistorialAlertas';
 
 // Componentes
 import Fichas from '@/modules/instructor/components/Fichas';
@@ -76,6 +77,8 @@ const LayoutInstructor = () => {
     else if (path.includes('/reportes-finales')) setActivePage('reportes-finales');
     else if (path.includes('/empresas')) setActivePage('empresas');
     else if (path.includes('/aprendices')) setActivePage('aprendices');
+    else if (path.includes('/calendario')) setActivePage('calendario');
+    else if (path.includes('/evento')) setActivePage('calendario');
   }, [location.pathname]);
 
   const handleSidebarClick = (pageId) => {
@@ -89,7 +92,7 @@ const LayoutInstructor = () => {
         notifications={[]}
       />
       <div className="main-body">
-        <SidebarInstructor setActivePage={handleSidebarClick} />
+        <SidebarInstructor key={location.pathname} setActivePage={handleSidebarClick} />
         <div className="content-area" style={{ padding: '30px', boxSizing: 'border-box', backgroundColor: '#f6f8fa' }}>
           <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
             <Routes>
@@ -110,6 +113,7 @@ const LayoutInstructor = () => {
               <Route path="/aprendices" element={<Aprendices />} />
               <Route path="/bitacora/aprendiz/:aprendizId" element={<DetalleAprendizBitacoras />} />
               <Route path="/bitacora/aprendiz/:aprendizId/bimestre/:bimestre" element={<BitacorasPorBimestre />} />
+              <Route path="/historial-alertas" element={<HistorialAlertas rutaVolver="/instructor" />} />
               <Route path="/mi-perfil" element={<MiPerfil />} />
               <Route path="/calendario" element={<Calendario />} />
               <Route path="/seguimientos" element={<Seguimientos />} />

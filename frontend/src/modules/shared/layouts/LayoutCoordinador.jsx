@@ -9,6 +9,7 @@ import GestionModalidades from '@/modules/shared/pages/GestionModalidades';
 import DashboardCoordinador from "@/modules/coordinador/pages/DashboardCoordinador";
 import VerFichas from "@/modules/coordinador/pages/VerFichas";
 import VerAprendices from "@/modules/coordinador/pages/VerAprendices";
+import VerCertificados from '@/modules/coordinador/pages/VerCertificados';
 import CartasPresentacion from "@/modules/coordinador/pages/CartasPresentacion";
 import ReportesGlobales from "@/modules/coordinador/pages/ReportesGlobales";
 import Parametrizacion from "@/modules/coordinador/pages/Parametrizacion";
@@ -38,6 +39,7 @@ import CentrosFormacion from "@/modules/coordinador/pages/CentrosFormacion";
 
 // 🔥 Soportes (compartida con admin)
 import Soportes from "@/modules/shared/pages/Novedades";
+import HistorialAlertas from '@/shared/components/HistorialAlertas';
 
 const LayoutCoordinador = () => {
   const navigate = useNavigate();
@@ -91,6 +93,7 @@ const LayoutCoordinador = () => {
             <Route path="/parametrizacion" element={<Parametrizacion />} />
             <Route path="/fichas" element={<VerFichas />} />
             <Route path="/cartas-presentacion" element={<CartasPresentacion />} />
+              <Route path="/certificados" element={<VerCertificados />} />
             <Route path="/ficha/:idFicha" element={<VerAprendices />} />
             <Route path="/reportes" element={<ReportesGlobales />} />
             <Route path="/reportes/ficha/:idFicha" element={<ReporteFichaDetalle />} />
@@ -118,6 +121,7 @@ const LayoutCoordinador = () => {
             <Route path="/aprendices-ficha/:idFicha" element={<AprendicesFicha />} />
 
             {/* 🔥 Ruta de Soportes (NUEVO) */}
+            <Route path="/historial-alertas" element={<HistorialAlertas rutaVolver="/coordinador" />} />
             <Route path="/soportes" element={<Soportes />} />
             <Route path="/modalidades" element={<GestionModalidades />} />
           </Routes>

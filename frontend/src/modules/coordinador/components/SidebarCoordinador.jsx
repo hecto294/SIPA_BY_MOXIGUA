@@ -38,6 +38,13 @@ const SidebarCoordinador = ({ onNavigate, activePage }) => {
           >
             <i className="fas fa-envelope-open-text"></i> Cartas de Presentación
           </li>
+          {/* 4. Certificados */}
+          <li 
+            className={activePage === 'certificados' ? 'active' : ''} 
+            onClick={() => onNavigate('/coordinador/certificados', 'certificados')}
+          >
+            <i className="fas fa-award"></i> Certificados
+          </li>
 
           {/* 5. Reportes */}
           <li 

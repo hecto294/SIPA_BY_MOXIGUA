@@ -10,6 +10,7 @@ import DashboardAprendiz from "@/modules/aprendiz/pages/DashboardAprendiz";
 import MisMomentos from "@/modules/aprendiz/pages/MisMomentos";
 import MisBitacoras from "@/modules/aprendiz/pages/MisBitacoras";
 import MisCartasPresentacion from "@/modules/aprendiz/pages/MisCartasPresentacion";
+import MisCertificados from "@/modules/aprendiz/pages/MisCertificados";
 import MiPerfil from "@/modules/aprendiz/pages/MiPerfil";
 import Novedades from "@/modules/aprendiz/pages/Novedades";
 
@@ -23,6 +24,7 @@ const LayoutAprendiz = ({ user }) => {
     if (path.includes('/mis-momentos')) return 'momentos';
     if (path.includes('/mis-bitacoras')) return 'bitacoras';
     if (path.includes('/mis-cartas-presentacion')) return 'cartas-presentacion';
+    if (path.includes('/mis-certificados')) return 'certificados';
     if (path.includes('/novedades')) return 'novedades';
     if (path.includes('/mi-perfil')) return 'perfil';
     return 'dashboard';
@@ -34,6 +36,7 @@ const LayoutAprendiz = ({ user }) => {
       momentos: '/aprendiz/mis-momentos',
       bitacoras: '/aprendiz/mis-bitacoras',
       'cartas-presentacion': '/aprendiz/mis-cartas-presentacion',
+      certificados: '/aprendiz/mis-certificados',
       novedades: '/aprendiz/novedades',
       perfil: '/aprendiz/mi-perfil',
     };
@@ -55,6 +58,7 @@ const LayoutAprendiz = ({ user }) => {
               <Route path="/mis-momentos" element={<MisMomentos />} />
               <Route path="/mis-bitacoras" element={<MisBitacoras />} />
               <Route path="/mis-cartas-presentacion" element={<MisCartasPresentacion />} />
+              <Route path="/mis-certificados" element={<MisCertificados />} />
               <Route path="/novedades" element={<Novedades />} />
               <Route path="/mi-perfil" element={<MiPerfil />} />
               <Route path="*" element={<Navigate to="/aprendiz" replace />} />

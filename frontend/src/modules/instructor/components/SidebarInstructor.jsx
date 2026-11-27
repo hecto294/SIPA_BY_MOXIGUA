@@ -21,6 +21,7 @@ const SidebarInstructor = ({ setActivePage }) => {
     if (path.includes('/bitacora')) return 'bitacora';
     if (path.includes('/certificaciones')) return 'certificaciones';
     if (path.includes('/reportes-finales')) return 'reportes-finales';
+    if (path.includes('/calendario')) return 'calendario';
     return 'dashboard';
   };
 
@@ -85,6 +86,10 @@ const SidebarInstructor = ({ setActivePage }) => {
               <li className={activeItem === 'certificaciones' ? 'active' : ''} onClick={() => handleNavigation('certificaciones', '/instructor/certificaciones')}>Certificaciones</li>
             </ul>
           )}
+
+          <li className={activeItem === 'calendario' ? 'active' : ''} onClick={() => handleNavigation('calendario', '/instructor/calendario')}>
+            <i className="fas fa-calendar-alt"></i> Calendario
+          </li>
 
           <li className={activeItem === 'reportes-finales' ? 'active' : ''} onClick={() => handleNavigation('reportes-finales', '/instructor/reportes-finales')}>
             <i className="fas fa-file-signature"></i> Reportes Finales

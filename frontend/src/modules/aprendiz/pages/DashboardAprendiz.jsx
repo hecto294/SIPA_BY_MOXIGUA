@@ -95,15 +95,32 @@ const DashboardAprendiz = ({ user }) => {
   }, [dashboard]);
 
   // Mapeo de entidades → rutas del aprendiz
+  const RUTAS_POR_CATEGORIA = {
+    BITACORAS: '/aprendiz/mis-bitacoras',
+    REUNIONES: '/aprendiz/mis-momentos',
+    PLAZOS: '/aprendiz/mis-momentos',
+    DOCUMENTOS: '/aprendiz/mis-momentos',
+    CHARLAS: '/aprendiz/mis-momentos',
+  };
+
+  const RUTAS_POR_ENTIDAD = {
+    bitacora: '/aprendiz/mis-bitacoras',
+    reunion: '/aprendiz/mis-momentos',
+    charla: '/aprendiz/mis-momentos',
+    proceso: '/aprendiz/mis-momentos',
+  };
+
+  const rutaDeAlerta = (alerta) =>
+    RUTAS_POR_CATEGORIA[alerta.categoria] || RUTAS_POR_ENTIDAD[alerta.entidad_relacionada] || null;
+
   const handleVerRecurso = (alerta, nav) => {
-    const mapa = {
-      bitacora: '/aprendiz/mis-bitacoras',
-      proceso: '/aprendiz/mis-momentos',
-      documento: '/aprendiz/mis-certificados',
-      reunion: '/aprendiz/mis-momentos',
-    };
-    const ruta = mapa[alerta.entidad_relacionada];
-    if (ruta) nav(ruta);
+    const ruta = rutaDeAlerta(alerta);
+    if (ruta) nav(ruta, { state: { alertaId: alerta.id, modo: 'ver' } });
+  };
+
+  const handleResolverRecurso = (alerta, nav) => {
+    const ruta = rutaDeAlerta(alerta);
+    if (ruta) nav(ruta, { state: { alertaId: alerta.id, modo: 'resolver' } });
   };
 
   if (loading) {
@@ -136,6 +153,7 @@ const DashboardAprendiz = ({ user }) => {
       <WidgetAlertas
         titulo="Mis Alertas"
         onVerRecurso={handleVerRecurso}
+        onResolverRecurso={handleResolverRecurso}
         onVerHistorial={() => navigate('/aprendiz/novedades')}
       />
 

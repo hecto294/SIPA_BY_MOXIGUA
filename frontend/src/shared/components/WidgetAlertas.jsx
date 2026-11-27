@@ -33,7 +33,7 @@ const formatearFecha = (isoString) => {
   return fecha.toLocaleDateString('es-CO');
 };
 
-const WidgetAlertas = ({ titulo = 'Mis Alertas', onVerRecurso, onVerHistorial }) => {
+const WidgetAlertas = ({ titulo = 'Mis Alertas', onVerRecurso, onResolverRecurso, onVerHistorial }) => {
   const navigate = useNavigate();
   const { alertas, pendientes, loading, error, resolviendo, resolver } = useAlertas();
 
@@ -43,8 +43,12 @@ const WidgetAlertas = ({ titulo = 'Mis Alertas', onVerRecurso, onVerHistorial })
     }
   };
 
-  const handleResolver = async (alertaId) => {
-    await resolver(alertaId);
+  const handleResolver = async (alerta) => {
+    if (onResolverRecurso) {
+      onResolverRecurso(alerta, navigate);
+      return;
+    }
+    await resolver(alerta.id);
   };
 
   if (loading && alertas.length === 0) {
@@ -117,7 +121,7 @@ const WidgetAlertas = ({ titulo = 'Mis Alertas', onVerRecurso, onVerHistorial })
                   )}
                   <button
                     className="alerta-btn alerta-btn-resolver"
-                    onClick={() => handleResolver(alerta.id)}
+                    onClick={() => handleResolver(alerta)}
                     disabled={resolviendo === alerta.id}
                   >
                     {resolviendo === alerta.id ? '⏳...' : '✓ Resolver'}

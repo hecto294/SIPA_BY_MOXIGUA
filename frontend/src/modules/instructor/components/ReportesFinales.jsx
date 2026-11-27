@@ -1,3 +1,4 @@
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 // src/modules/instructor/components/ReportesFinales.jsx
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
@@ -60,7 +61,7 @@ const ReportesFinales = () => {
     if (!file) return;
 
     if (file.type !== 'application/pdf') {
-      alert('Por favor, selecciona un archivo PDF.');
+      Swal.fire('Formato incorrecto', 'Por favor, selecciona un archivo PDF.', 'warning');
       return;
     }
 
@@ -69,19 +70,23 @@ const ReportesFinales = () => {
 
     try {
       // Ajusta esta URL según la ruta real de tu backend
+      const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE}/reportes/subir/${aprendizId}`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formData
       });
       if (response.ok) {
-        alert('Reporte subido correctamente');
+        Swal.fire('¡Éxito!', 'Reporte subido correctamente.', 'success');
         // Opcional: recargar la lista de reportes aquí si tienes una función
       } else {
-        alert('Error al subir el reporte');
+        Swal.fire('Error', 'No se pudo subir el reporte. Intenta de nuevo.', 'error');
       }
     } catch (error) {
       console.error(error);
-      alert('Error de conexión');
+      Swal.fire('Error de conexión', 'No se pudo comunicar con el servidor.', 'error');
     }
   };
   if (loading) {

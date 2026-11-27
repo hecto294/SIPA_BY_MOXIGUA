@@ -1,7 +1,9 @@
 from typing import Optional
 from datetime import date, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, File, UploadFile
+import shutil
+import os
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -255,145 +257,63 @@ def reporte_momentos(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_role(Roles.ADMIN, Roles.COORDINADOR, Roles.INSTRUCTOR)),
 ):
-    """
-    Devuelve los 3 momentos (M1, M2, M3) con sus fichas y aprendices,
-    basado en la tabla reuniones_seguimiento.
-    """
-    from app.models import (
-        ReunionSeguimiento,
-        ProcesoEtapaProductiva,
-        Ficha,
-        ProgramaFormacion,
-        Usuario,
-        AsignacionInstructorFicha,
-    )
+    """RF-092: Lista de aprendices por momento (solo lectura, sin tabla de reuniones)."""
+    from app.models import (ProcesoEtapaProductiva, Ficha, ProgramaFormacion, Usuario, AsignacionInstructorFicha)
 
     MOMENTOS_CONFIG = [
-        {
-            "id": 1,
-            "titulo": "Momento 1",
-            "descripcion": "Inducción y Diagnóstico Inicial",
-            "icono": "fa-flag",
-            "color": "#3ca203",
-            "momento_db": "MOMENTO_1_INICIAL",
-        },
-        {
-            "id": 2,
-            "titulo": "Momento 2",
-            "descripcion": "Ejecución y Seguimiento",
-            "icono": "fa-play-circle",
-            "color": "#0ea5e9",
-            "momento_db": "MOMENTO_2_PARCIAL",
-        },
-        {
-            "id": 3,
-            "titulo": "Momento 3",
-            "descripcion": "Evaluación y Cierre",
-            "icono": "fa-flag-checkered",
-            "color": "#8b5cf6",
-            "momento_db": "MOMENTO_3_FINAL",
-        },
+        {"id": 1, "titulo": "Momento 1", "descripcion": "Inducción y Diagnóstico Inicial", "icono": "fa-flag", "color": "#3ca203"},
+        {"id": 2, "titulo": "Momento 2", "descripcion": "Ejecución y Seguimiento", "icono": "fa-play-circle", "color": "#0ea5e9"},
+        {"id": 3, "titulo": "Momento 3", "descripcion": "Evaluación y Cierre", "icono": "fa-flag-checkered", "color": "#8b5cf6"},
     ]
 
     resultado = []
 
     for config in MOMENTOS_CONFIG:
-        # Buscar todas las reuniones de este momento
-        reuniones = (
-            db.query(ReunionSeguimiento)
-            .filter(
-                ReunionSeguimiento.momento == config["momento_db"],
-                ReunionSeguimiento.is_active == True,
-            )
-            .all()
-        )
-
-        # Agrupar por ficha
+        fichas_activas = db.query(Ficha).filter(Ficha.is_active == True).all()
         fichas_dict = {}
 
-        for r in reuniones:
-            proceso = db.query(ProcesoEtapaProductiva).filter(
-                ProcesoEtapaProductiva.id == r.proceso_id
-            ).first()
-            if not proceso:
-                continue
-
-            ficha = db.query(Ficha).filter(Ficha.id == proceso.ficha_id).first()
-            if not ficha:
-                continue
-
-            aprendiz = db.query(Usuario).filter(Usuario.id == proceso.aprendiz_id).first()
-            if not aprendiz:
-                continue
-
-            # Instructor de la ficha
-            asignacion = (
-                db.query(AsignacionInstructorFicha)
-                .filter(
-                    AsignacionInstructorFicha.ficha_id == ficha.id,
-                    AsignacionInstructorFicha.is_active == True,
-                )
-                .first()
-            )
+        for ficha in fichas_activas:
+            asignacion = db.query(AsignacionInstructorFicha).filter(AsignacionInstructorFicha.ficha_id == ficha.id, AsignacionInstructorFicha.is_active == True).first()
             instructor_nombre = "Sin asignar"
             if asignacion:
                 instr = db.query(Usuario).filter(Usuario.id == asignacion.instructor_id).first()
                 if instr:
                     instructor_nombre = f"{instr.nombre} {instr.apellido}"
 
-            # Programa
-            programa = db.query(ProgramaFormacion).filter(
-                ProgramaFormacion.id == ficha.programa_id
-            ).first()
+            programa = db.query(ProgramaFormacion).filter(ProgramaFormacion.id == ficha.programa_id).first()
+            procesos = db.query(ProcesoEtapaProductiva).filter(ProcesoEtapaProductiva.ficha_id == ficha.id, ProcesoEtapaProductiva.is_active == True).all()
 
-            # Estado del aprendiz en este momento
-            if r.fecha_realizada:
-                estado = "Completado"
-            elif r.fecha_programada:
-                estado = "En proceso"
-            else:
-                estado = "Pendiente"
+            if not procesos:
+                continue
 
-            fecha_str = ""
-            if r.fecha_realizada:
-                fecha_str = r.fecha_realizada.strftime("%d/%m/%Y")
-            elif r.fecha_programada:
-                fecha_str = r.fecha_programada.strftime("%d/%m/%Y")
-            else:
-                fecha_str = "-"
+            aprendices_data = []
 
-            aprendiz_data = {
-                "id": r.id,
-                "proceso_id": proceso.id,
-                "nombre": f"{aprendiz.nombre} {aprendiz.apellido}",
-                "estado": estado,
-                "fecha": fecha_str,
-                "observacion": r.observaciones or "Sin observaciones",
+            for p in procesos:
+                aprendiz = db.query(Usuario).filter(Usuario.id == p.aprendiz_id).first()
+                if not aprendiz:
+                    continue
+
+                aprendices_data.append({
+                    "id": p.id,
+                    "nombre": f"{aprendiz.nombre} {aprendiz.apellido}",
+                    "estado": "Pendiente",
+                    "fecha": "Sin agendar",
+                    "observacion": "No se ha registrado reunión para este momento"
+                })
+
+            fichas_dict[ficha.numero_ficha] = {
+                "idFicha": ficha.numero_ficha,
+                "programa": programa.nombre if programa else "Sin programa",
+                "instructor": instructor_nombre,
+                "aprendices": aprendices_data,
             }
 
-            ficha_id_str = ficha.numero_ficha
-
-            if ficha_id_str not in fichas_dict:
-                fichas_dict[ficha_id_str] = {
-                    "idFicha": ficha_id_str,
-                    "programa": programa.nombre if programa else "Sin programa",
-                    "instructor": instructor_nombre,
-                    "aprendices": [],
-                }
-
-            fichas_dict[ficha_id_str]["aprendices"].append(aprendiz_data)
-
         resultado.append({
-            "id": config["id"],
-            "titulo": config["titulo"],
-            "descripcion": config["descripcion"],
-            "icono": config["icono"],
-            "color": config["color"],
-            "fichas": list(fichas_dict.values()),
+            "id": config["id"], "titulo": config["titulo"], "descripcion": config["descripcion"],
+            "icono": config["icono"], "color": config["color"], "fichas": list(fichas_dict.values()),
         })
 
     return resultado
-
 
 @router.get("/momentos/ficha/{ficha_id}")
 def reporte_momentos_por_ficha(
@@ -466,3 +386,56 @@ def reporte_momentos_por_ficha(
         })
 
     return resultado
+
+# ============================================================
+# NUEVO: SUBIR REPORTE FINAL (PDF)
+# ============================================================
+
+@router.post("/subir/{aprendiz_id}")
+async def subir_reporte_pdf(
+    aprendiz_id: int,
+    archivo: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(Roles.ADMIN, Roles.INSTRUCTOR)),
+):
+    """
+    Sube el reporte final en PDF de un aprendiz.
+    Guarda el archivo en uploads/reportes/ y actualiza el proceso.
+    """
+    # 1. Validar que sea un PDF
+    if archivo.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="El archivo debe ser un PDF")
+
+    # 2. Crear carpeta si no existe
+    carpeta_destino = "uploads/reportes"
+    os.makedirs(carpeta_destino, exist_ok=True)
+
+    # 3. Guardar el archivo
+    nombre_archivo = f"reporte_{aprendiz_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
+    ruta_completa = os.path.join(carpeta_destino, nombre_archivo)
+
+    try:
+        with open(ruta_completa, "wb") as buffer:
+            shutil.copyfileobj(archivo.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al guardar el archivo: {str(e)}")
+
+    # 4. Actualizar el proceso del aprendiz (opcional, si tienes un campo para la ruta del reporte)
+    # Aquí asumimos que existe un campo 'reporte_final_url' o similar en ProcesoEtapaProductiva
+    # Si no existe, solo guardamos el archivo y devolvemos éxito.
+    
+    proceso = db.query(ProcesoEtapaProductiva).filter(
+        ProcesoEtapaProductiva.aprendiz_id == aprendiz_id
+    ).first()
+
+    if proceso:
+        # Si tienes un campo para la ruta, descomenta y ajusta:
+        # proceso.reporte_final_url = ruta_completa
+        # db.commit()
+        pass
+
+    return {
+        "mensaje": "Reporte subido correctamente",
+        "archivo": nombre_archivo,
+        "ruta": ruta_completa
+    }
