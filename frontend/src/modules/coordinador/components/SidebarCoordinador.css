@@ -1,0 +1,65 @@
+.sipa-sidebar {
+  width: 255px;
+  min-width: 255px;
+  background: #ebebeb;
+  border-right: 1px solid #dcdcdc;
+  height: calc(100vh - 68px);
+  position: sticky;
+  top: 68px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.sipa-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+}
+
+.sipa-sidebar .sipa-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  padding: 14px 26px;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  outline: none;
+  text-align: left;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: #4a4a4a;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sipa-sidebar .sipa-sidebar__item i {
+  width: 22px;
+  text-align: center;
+  font-size: 18px;
+  color: #5f6368;
+  flex-shrink: 0;
+}
+
+.sipa-sidebar .sipa-sidebar__item:hover {
+  background: #dedede;
+}
+
+.sipa-sidebar .sipa-sidebar__item.active {
+  background: #d8ecd0;
+  color: #2f7d0c;
+  font-weight: 600;
+  box-shadow: inset 4px 0 0 #39a900;
+}
+
+.sipa-sidebar .sipa-sidebar__item.active i {
+  color: #39a900;
+}
+
+.sipa-sidebar::-webkit-scrollbar { width: 6px; }
+.sipa-sidebar::-webkit-scrollbar-thumb { background: #bdbdbd; border-radius: 3px; }

@@ -1,90 +1,40 @@
 // src/modules/coordinador/pages/DetalleAprendiz.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Swal from 'sweetalert2';
 import Breadcrumb from '@/modules/shared/components/Breadcrumb';
 import { procesoService } from '@/core/services/procesoService';
 import EvaluacionFinalModal from '../components/EvaluacionFinalModal';
 
-const TIPOS_NOVEDAD = [
-  { value: 'OTRO', label: 'Cambio de ficha / otro' },
-  { value: 'CAMBIO_EMPRESA', label: 'Cambio de empresa' },
-  { value: 'INCAPACIDAD', label: 'Incapacidad' },
-  { value: 'PRORROGA', label: 'Prórroga' },
-  { value: 'RENUNCIA', label: 'Renuncia' },
+const ESTADOS_PROCESO = [
+  { value: 'ACTIVO', label: 'Activo (En formación)' },
+  { value: 'CONDICIONADO', label: 'Condicionado' },
+  { value: 'FINALIZADO', label: 'Finalizado' },
+  { value: 'APLAZADO', label: 'Aplazado' },
+  { value: 'RETIRADO', label: 'Retirado' },
 ];
 
 const DetalleAprendiz = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 🔥 Obtener el proceso que se pasó desde AprendicesGlobales
-  const proceso = location.state?.proceso;
-
-  // ==================== NOVEDADES ====================
-  const [novedades, setNovedades] = useState([]);
-  const [textoNovedad, setTextoNovedad] = useState('');
-  const [tipoNovedad, setTipoNovedad] = useState('OTRO');
+  const procesoOriginal = location.state?.proceso;
+  const [proceso, setProceso] = useState(procesoOriginal);
+  const [estadoSeleccionado, setEstadoSeleccionado] = useState(
+    procesoOriginal?.estado || 'ACTIVO'
+  );
   const [guardando, setGuardando] = useState(false);
+  const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (!proceso?.id) return;
-    procesoService
-      .getNovedades(proceso.id)
-      .then((data) => setNovedades(Array.isArray(data) ? data : []))
-      .catch(() => setNovedades([]));
-  }, [proceso?.id]);
-
-  const handleGuardarNovedad = async () => {
-    const descripcion = textoNovedad.trim();
-    if (descripcion.length < 5) {
-      Swal.fire({
-        title: '⚠️ Escribe la novedad',
-        text: 'La descripción debe tener al menos 5 caracteres.',
-        icon: 'warning',
-        confirmButtonColor: '#3ca203',
-      });
-      return;
-    }
-    try {
-      setGuardando(true);
-      const hoy = new Date();
-      const fecha = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
-      const creada = await procesoService.crearNovedad(proceso.id, {
-        tipo_novedad: tipoNovedad,
-        fecha_novedad: fecha,
-        descripcion,
-      });
-      setNovedades((prev) => [creada, ...prev]);
-      setTextoNovedad('');
-      setTipoNovedad('OTRO');
-      Swal.fire({
-        title: '✅ Novedad guardada',
-        icon: 'success',
-        confirmButtonColor: '#3ca203',
-        timer: 1500,
-        showConfirmButton: false,
-      });
-    } catch (err) {
-      Swal.fire({
-        title: '❌ No se pudo guardar',
-        text: err.message || 'Error al guardar la novedad',
-        icon: 'error',
-        confirmButtonColor: '#dc2626',
-      });
-    } finally {
-      setGuardando(false);
-    }
-  };
-
-  console.log('🔍 Proceso recibido:', proceso);
+  // Checklist
+  const [checklist, setChecklist] = useState([]);
+  const [cargandoChecklist, setCargandoChecklist] = useState(false);
+  const [subiendoId, setSubiendoId] = useState(null); // id del ítem que se está subiendo
+  const [mensajeChecklist, setMensajeChecklist] = useState({ tipo: '', texto: '' });
 
   const formatearFecha = (fecha) => {
     if (!fecha) return '-';
     try {
-      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(fecha));
-      if (m) return new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString('es-ES');
       return new Date(fecha).toLocaleDateString('es-ES');
     } catch {
       return fecha;
@@ -95,14 +45,29 @@ const DetalleAprendiz = () => {
     switch (estado) {
       case 'ACTIVO':
         return { color: '#10b981', icono: 'fa-check-circle', etiqueta: 'En formación' };
+      case 'CONDICIONADO':
+        return { color: '#f59e0b', icono: 'fa-exclamation-triangle', etiqueta: 'Condicionado' };
       case 'FINALIZADO':
         return { color: '#3b82f6', icono: 'fa-flag-checkered', etiqueta: 'Finalizado' };
       case 'APLAZADO':
-        return { color: '#f59e0b', icono: 'fa-pause-circle', etiqueta: 'Condicionado' };
+        return { color: '#8b5cf6', icono: 'fa-pause-circle', etiqueta: 'Aplazado' };
       case 'RETIRADO':
         return { color: '#ef4444', icono: 'fa-times-circle', etiqueta: 'Retirado' };
       default:
         return { color: '#6b7280', icono: 'fa-circle', etiqueta: estado || 'Sin estado' };
+    }
+  };
+
+  const getEstadoDocConfig = (estado) => {
+    switch (estado) {
+      case 'ENTREGADO':
+        return { color: '#10b981', bg: '#d1fae5', label: 'Entregado' };
+      case 'PENDIENTE':
+        return { color: '#f59e0b', bg: '#fef3c7', label: 'Pendiente' };
+      case 'NO_APLICA':
+        return { color: '#6b7280', bg: '#f3f4f6', label: 'No aplica' };
+      default:
+        return { color: '#6b7280', bg: '#f3f4f6', label: estado || '—' };
     }
   };
 
@@ -115,7 +80,94 @@ const DetalleAprendiz = () => {
     return nombre.substring(0, 2).toUpperCase();
   };
 
-  // Si no viene el proceso (acceso directo por URL), mostrar mensaje
+  // Cargar checklist al montar
+  useEffect(() => {
+    if (!proceso?.id) return;
+
+    const cargar = async () => {
+      setCargandoChecklist(true);
+      try {
+        const data = await procesoService.getChecklist(proceso.id);
+        setChecklist(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Error cargando checklist:', err);
+        setChecklist([]);
+      } finally {
+        setCargandoChecklist(false);
+      }
+    };
+
+    cargar();
+  }, [proceso?.id]);
+
+  const handleGuardarEstado = async () => {
+    if (!proceso?.id) return;
+    if (estadoSeleccionado === proceso.estado) {
+      setMensaje({ tipo: 'info', texto: 'El estado ya está seleccionado.' });
+      return;
+    }
+
+    setGuardando(true);
+    setMensaje({ tipo: '', texto: '' });
+
+    try {
+      const actualizado = await procesoService.updateProceso(proceso.id, {
+        estado: estadoSeleccionado,
+      });
+
+      setProceso({ ...proceso, estado: actualizado.estado || estadoSeleccionado });
+      setMensaje({
+        tipo: 'success',
+        texto: `Estado actualizado a "${ESTADOS_PROCESO.find((e) => e.value === estadoSeleccionado)?.label}" correctamente.`,
+      });
+    } catch (error) {
+      console.error(error);
+      setMensaje({
+        tipo: 'error',
+        texto: error.message || 'No se pudo actualizar el estado. Intenta de nuevo.',
+      });
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const handleSubirEvidencia = async (itemId, file) => {
+    if (!file) return;
+
+    setSubiendoId(itemId);
+    setMensajeChecklist({ tipo: '', texto: '' });
+
+    try {
+      const actualizado = await procesoService.subirEvidenciaChecklist(itemId, file);
+
+      // Actualizar el ítem en el estado local
+      setChecklist((prev) =>
+        prev.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                estado: actualizado.estado || 'ENTREGADO',
+                evidencia_archivo_id: actualizado.evidencia_archivo_id,
+              }
+            : item
+        )
+      );
+
+      setMensajeChecklist({
+        tipo: 'success',
+        texto: `Evidencia asociada correctamente a "${actualizado.tipo_documento || 'el documento'}".`,
+      });
+    } catch (error) {
+      console.error(error);
+      setMensajeChecklist({
+        tipo: 'error',
+        texto: error.message || 'No se pudo subir la evidencia. Intenta de nuevo.',
+      });
+    } finally {
+      setSubiendoId(null);
+    }
+  };
+
   if (!proceso) {
     return (
       <div style={{ width: '100%', padding: '20px 0' }}>
@@ -145,11 +197,11 @@ const DetalleAprendiz = () => {
               padding: '10px 24px',
               borderRadius: '8px',
               cursor: 'pointer',
+              fontWeight: '500',
               marginTop: '16px',
-              fontWeight: 'bold',
             }}
           >
-            <i className="fas fa-arrow-left" /> Volver a aprendices
+            Volver a aprendices
           </button>
         </div>
       </div>
@@ -157,28 +209,11 @@ const DetalleAprendiz = () => {
   }
 
   const config = getEstadoConfig(proceso.estado);
+  const nombreCompleto = proceso.aprendiz_nombre || 'Sin nombre';
 
   return (
     <div style={{ width: '100%', padding: '20px 0' }}>
       <Breadcrumb />
-
-      <button
-        onClick={() => navigate('/coordinador/aprendices')}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          color: '#3ca203',
-          cursor: 'pointer',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          fontSize: '14px',
-          fontWeight: '500',
-        }}
-      >
-        <i className="fas fa-arrow-left" /> Volver a aprendices
-      </button>
 
       <div
         style={{
@@ -186,250 +221,312 @@ const DetalleAprendiz = () => {
           borderRadius: '16px',
           padding: '30px',
           border: '1px solid #e5e7eb',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-          maxWidth: '1000px',
-          margin: '0 auto',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
         }}
       >
-        {/* ==================== ENCABEZADO ==================== */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '20px',
-            paddingBottom: '20px',
-            borderBottom: '2px solid #e5e7eb',
-            marginBottom: '25px',
-          }}
-        >
+        {/* ==================== CABECERA ==================== */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '30px' }}>
           <div
             style={{
-              width: '80px',
-              height: '80px',
+              width: '70px',
+              height: '70px',
               borderRadius: '50%',
-              backgroundColor: '#e6f7ed',
+              background: '#3ca203',
+              color: 'white',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '32px',
-              color: '#3ca203',
+              fontSize: '24px',
               fontWeight: 'bold',
-              border: '3px solid #3ca203',
             }}
           >
-            {getIniciales(proceso.aprendiz_nombre)}
-          </div>
-          <div style={{ flex: 1 }}>
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 5px 0' }}>
-              {proceso.aprendiz_nombre || 'Sin nombre'}
-            </h2>
-            <p style={{ color: '#6b7280', margin: '0' }}>
-              <i className="fas fa-envelope" style={{ marginRight: '8px', color: '#3ca203' }} />
-              {proceso.aprendiz_email || 'Sin correo'}
-            </p>
+            {getIniciales(nombreCompleto)}
           </div>
           <div>
-            <span
-              style={{
-                background: `${config.color}15`,
-                color: config.color,
-                padding: '8px 18px',
-                borderRadius: '20px',
-                fontSize: '14px',
-                fontWeight: 'bold',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              <i className={`fas ${config.icono}`}></i>
-              {config.etiqueta}
-            </span>
-          </div>
-        </div>
-
-        {/* ==================== DATOS PERSONALES ==================== */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '25px', marginBottom: '30px' }}>
-          <div>
-            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>
-              Documento
-            </p>
-            <p style={{ margin: '5px 0 0 0', fontWeight: '500' }}>
-              {proceso.aprendiz_documento || 'No registrado'}
-            </p>
-          </div>
-          <div>
-            <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>
-              Teléfono
-            </p>
-            <p style={{ margin: '5px 0 0 0', fontWeight: '500' }}>
-              {proceso.aprendiz_telefono || 'No registrado'}
+            <h2 style={{ margin: 0, fontSize: '24px', color: '#111827' }}>{nombreCompleto}</h2>
+            <p style={{ margin: '4px 0 0 0', color: '#6b7280', fontSize: '14px' }}>
+              {proceso.aprendiz_documento || 'Sin documento'} · {proceso.aprendiz_email || 'Sin correo'}
             </p>
           </div>
         </div>
 
-        {/* ==================== ETAPA PRODUCTIVA ==================== */}
-        <div style={{ borderTop: '2px solid #f3f4f6', paddingTop: '20px' }}>
-          <h3
-            style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#1f2937',
-              marginBottom: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-          >
-            <i className="fas fa-briefcase" style={{ color: '#3ca203' }} />
-            Información de Etapa Productiva
+        {/* ==================== DATOS DEL PROCESO ==================== */}
+        <div style={{ marginBottom: '30px' }}>
+          <h3 style={{ fontSize: '16px', color: '#374151', marginBottom: '16px', borderBottom: '2px solid #e5e7eb', paddingBottom: '8px' }}>
+            Información del proceso
           </h3>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: '16px',
+            }}
+          >
             <div style={{ background: '#f9fafb', padding: '15px', borderRadius: '8px' }}>
-              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                Ficha
-              </p>
-              <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px', color: '#3ca203' }}>
-                {proceso.ficha_numero || '—'}
-              </p>
+              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>Ficha</p>
+              <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px' }}>{proceso.ficha_numero || '-'}</p>
             </div>
             <div style={{ background: '#f9fafb', padding: '15px', borderRadius: '8px' }}>
-              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                Empresa
-              </p>
-              <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px' }}>
-                {proceso.empresa_nombre || 'Sin asignar'}
-              </p>
+              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>Programa</p>
+              <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px' }}>{proceso.programa_nombre || '-'}</p>
             </div>
             <div style={{ background: '#f9fafb', padding: '15px', borderRadius: '8px' }}>
-              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                ARL
-              </p>
-              <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px' }}>
-                {proceso.arl || 'Sin asignar'}
-              </p>
+              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>Modalidad</p>
+              <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px' }}>{proceso.modalidad_nombre || '-'}</p>
             </div>
             <div style={{ background: '#f9fafb', padding: '15px', borderRadius: '8px' }}>
-              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                Estado
-              </p>
+              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>Empresa</p>
+              <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px' }}>{proceso.empresa_nombre || 'Sin asignar'}</p>
+            </div>
+            <div style={{ background: '#f9fafb', padding: '15px', borderRadius: '8px' }}>
+              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>ARL</p>
+              <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px' }}>{proceso.arl || 'Sin asignar'}</p>
+            </div>
+            <div style={{ background: '#f9fafb', padding: '15px', borderRadius: '8px' }}>
+              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>Estado actual</p>
               <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px', color: config.color }}>
+                <i className={`fas ${config.icono}`} style={{ marginRight: '6px' }} />
                 {config.etiqueta}
               </p>
             </div>
             <div style={{ background: '#f9fafb', padding: '15px', borderRadius: '8px' }}>
-              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                Fecha Inicio
-              </p>
-              <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px' }}>
-                {formatearFecha(proceso.fecha_inicio)}
-              </p>
+              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>Fecha Inicio</p>
+              <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px' }}>{formatearFecha(proceso.fecha_inicio)}</p>
             </div>
             <div style={{ background: '#f9fafb', padding: '15px', borderRadius: '8px' }}>
-              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                Fecha Fin
-              </p>
-              <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px' }}>
-                {formatearFecha(proceso.fecha_fin)}
-              </p>
+              <p style={{ margin: 0, fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>Fecha Fin</p>
+              <p style={{ margin: '5px 0 0 0', fontWeight: 'bold', fontSize: '16px' }}>{formatearFecha(proceso.fecha_fin)}</p>
             </div>
           </div>
         </div>
 
-        {/* ==================== NOVEDADES ==================== */}
-        <div style={{ borderTop: '2px solid #f3f4f6', paddingTop: '20px', marginTop: '30px' }}>
-          <h3
-            style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#1f2937',
-              marginBottom: '15px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-          >
-            <i className="fas fa-clipboard-list" style={{ color: '#3ca203' }} />
-            Novedades
+        {/* ==================== CAMBIAR ESTADO (Tarea 1) ==================== */}
+        <div
+          style={{
+            background: '#f0fdf4',
+            border: '1px solid #bbf7d0',
+            borderRadius: '12px',
+            padding: '20px',
+            marginBottom: '24px',
+          }}
+        >
+          <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#166534', fontWeight: '600' }}>
+            <i className="fas fa-exchange-alt" style={{ marginRight: '8px' }} />
+            Cambiar estado del proceso
           </h3>
 
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
             <select
-              value={tipoNovedad}
-              onChange={(e) => setTipoNovedad(e.target.value)}
-              style={{ padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px' }}
-            >
-              {TIPOS_NOVEDAD.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </select>
-            <textarea
-              value={textoNovedad}
-              onChange={(e) => setTextoNovedad(e.target.value)}
-              placeholder="Escribe una novedad (ej: cambio de ficha)..."
-              rows={2}
-              maxLength={2000}
-              style={{
-                flex: 1,
-                minWidth: '220px',
-                padding: '8px 10px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '13px',
-                fontFamily: 'inherit',
-                resize: 'vertical',
-              }}
-            />
-            <button
-              onClick={handleGuardarNovedad}
+              value={estadoSeleccionado}
+              onChange={(e) => setEstadoSeleccionado(e.target.value)}
               disabled={guardando}
               style={{
-                background: '#3ca203',
-                color: 'white',
-                border: 'none',
-                padding: '9px 20px',
+                padding: '10px 14px',
                 borderRadius: '8px',
-                cursor: guardando ? 'not-allowed' : 'pointer',
-                fontWeight: 'bold',
+                border: '1px solid #d1d5db',
                 fontSize: '14px',
-                opacity: guardando ? 0.7 : 1,
+                minWidth: '220px',
+                background: 'white',
+                cursor: 'pointer',
               }}
             >
-              <i className="fas fa-save" /> {guardando ? 'Guardando...' : 'Guardar'}
+              {ESTADOS_PROCESO.map((e) => (
+                <option key={e.value} value={e.value}>
+                  {e.label}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={handleGuardarEstado}
+              disabled={guardando || estadoSeleccionado === proceso.estado}
+              style={{
+                background: guardando || estadoSeleccionado === proceso.estado ? '#9ca3af' : '#3ca203',
+                color: 'white',
+                border: 'none',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                cursor: guardando || estadoSeleccionado === proceso.estado ? 'not-allowed' : 'pointer',
+                fontWeight: '500',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              {guardando ? (
+                <>
+                  <i className="fas fa-spinner fa-spin" /> Guardando...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-save" /> Guardar estado
+                </>
+              )}
             </button>
           </div>
 
-          <div style={{ marginTop: '15px' }}>
-            {novedades.length === 0 ? (
-              <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>
-                Este aprendiz no tiene novedades registradas.
-              </p>
-            ) : (
-              novedades.map((n) => (
-                <div
-                  key={n.id}
-                  style={{
-                    background: '#f9fafb',
-                    borderLeft: '3px solid #3ca203',
-                    padding: '10px 14px',
-                    borderRadius: '6px',
-                    marginBottom: '8px',
-                  }}
-                >
-                  <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                    {(TIPOS_NOVEDAD.find((t) => t.value === n.tipo_novedad) || {}).label || n.tipo_novedad}
-                    {' · '}
-                    {formatearFecha(n.fecha_novedad)}
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#1f2937', marginTop: '3px' }}>{n.descripcion}</div>
-                </div>
-              ))
-            )}
-          </div>
+          {mensaje.texto && (
+            <div
+              style={{
+                marginTop: '12px',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                background:
+                  mensaje.tipo === 'success' ? '#d1fae5' : mensaje.tipo === 'error' ? '#fee2e2' : '#e0f2fe',
+                color:
+                  mensaje.tipo === 'success' ? '#065f46' : mensaje.tipo === 'error' ? '#991b1b' : '#075985',
+              }}
+            >
+              {mensaje.texto}
+            </div>
+          )}
         </div>
 
-                {/* ==================== RF-050: EVALUACIÓN FINAL ==================== */}
+        {/* ==================== CHECKLIST DOCUMENTAL (Tarea 2) ==================== */}
+        <div
+          style={{
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '12px',
+            padding: '20px',
+            marginBottom: '24px',
+          }}
+        >
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', color: '#1e293b', fontWeight: '600' }}>
+            <i className="fas fa-clipboard-list" style={{ marginRight: '8px' }} />
+            Checklist documental – Asociar evidencias
+          </h3>
+
+          {cargandoChecklist ? (
+            <p style={{ color: '#64748b', fontSize: '14px' }}>
+              <i className="fas fa-spinner fa-spin" /> Cargando checklist...
+            </p>
+          ) : checklist.length === 0 ? (
+            <p style={{ color: '#64748b', fontSize: '14px' }}>
+              No hay ítems de checklist registrados para este proceso.
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {checklist.map((item) => {
+                const docConfig = getEstadoDocConfig(item.estado);
+                const estaSubiendo = subiendoId === item.id;
+
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      background: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '10px',
+                      padding: '14px 16px',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: '180px' }}>
+                      <p style={{ margin: 0, fontWeight: '600', fontSize: '14px', color: '#1e293b' }}>
+                        {item.tipo_documento}
+                      </p>
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          marginTop: '4px',
+                          padding: '2px 10px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          background: docConfig.bg,
+                          color: docConfig.color,
+                        }}
+                      >
+                        {docConfig.label}
+                      </span>
+                      {item.evidencia_archivo_id && (
+                        <span style={{ marginLeft: '8px', fontSize: '12px', color: '#64748b' }}>
+                          <i className="fas fa-paperclip" /> Evidencia cargada
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <label
+                        style={{
+                          background: estaSubiendo ? '#94a3b8' : '#3ca203',
+                          color: 'white',
+                          padding: '8px 16px',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          cursor: estaSubiendo ? 'not-allowed' : 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        {estaSubiendo ? (
+                          <>
+                            <i className="fas fa-spinner fa-spin" /> Subiendo...
+                          </>
+                        ) : (
+                          <>
+                            <i className="fas fa-upload" /> Subir evidencia
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                          style={{ display: 'none' }}
+                          disabled={estaSubiendo}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleSubirEvidencia(item.id, file);
+                              e.target.value = ''; // reset
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {mensajeChecklist.texto && (
+            <div
+              style={{
+                marginTop: '14px',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                background:
+                  mensajeChecklist.tipo === 'success'
+                    ? '#d1fae5'
+                    : mensajeChecklist.tipo === 'error'
+                    ? '#fee2e2'
+                    : '#e0f2fe',
+                color:
+                  mensajeChecklist.tipo === 'success'
+                    ? '#065f46'
+                    : mensajeChecklist.tipo === 'error'
+                    ? '#991b1b'
+                    : '#075985',
+              }}
+            >
+              {mensajeChecklist.texto}
+            </div>
+          )}
+        </div>
+
+
+        {/* ==================== RF-050: EVALUACIÓN FINAL ==================== */}
         <div style={{ borderTop: '2px solid #f3f4f6', paddingTop: '20px', marginTop: '30px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <i className="fas fa-clipboard-check" style={{ color: '#3ca203' }} />
@@ -454,12 +551,13 @@ const DetalleAprendiz = () => {
           </div>
         </div>
 
-        {/* ==================== BOTÓN CERRAR ==================== */}
+
+        {/* ==================== BOTÓN VOLVER ==================== */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'flex-end',
-            marginTop: '30px',
+            marginTop: '10px',
             paddingTop: '20px',
             borderTop: '2px solid #e5e7eb',
           }}

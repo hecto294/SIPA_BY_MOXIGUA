@@ -10,7 +10,6 @@ from app.models import EstadoProceso, EstadoSofia, EstadoDocumento, TipoNovedad
 class ProcesoBase(BaseModel):
     aprendiz_id: int
     ficha_id: int
-    # 🔥 AHORA OPCIONAL: puede ser NULL en la BD
     modalidad_id: Optional[int] = None
     empresa_id: Optional[int] = None
     coordinador_empresa_id: Optional[int] = None
@@ -53,7 +52,6 @@ class ProcesoOut(BaseModel):
     id: int
     aprendiz_id: int
     ficha_id: int
-    # 🔥 AHORA OPCIONAL: puede ser NULL en la BD
     modalidad_id: Optional[int] = None
     empresa_id: Optional[int] = None
     coordinador_empresa_id: Optional[int] = None
@@ -65,15 +63,10 @@ class ProcesoOut(BaseModel):
     nota_empresa: Optional[float] = None
     nota_instructor: Optional[float] = None
     observaciones: Optional[str] = None
-    raps_pendientes: Optional[int] = None
-    porcentaje_raps: Optional[float] = None
-    fecha_inicio_contrato: Optional[date] = None
-    fecha_fin_contrato: Optional[date] = None
     is_active: bool
     created_at: datetime
     updated_at: datetime
 
-    # Campos calculados para el frontend
     aprendiz_nombre: Optional[str] = None
     aprendiz_email: Optional[str] = None
     aprendiz_documento: Optional[str] = None
@@ -110,14 +103,14 @@ class ChecklistDocumentoOut(ChecklistDocumentoBase):
     proceso_id: int
     is_active: bool
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
 
 
 # ================== Evaluación Final ==================
 class EvaluacionFinalUpdate(BaseModel):
+    estado_sofia: Optional[EstadoSofia] = None
     nota_empresa: Optional[float] = Field(None, ge=0, le=10)
     nota_instructor: Optional[float] = Field(None, ge=0, le=10)
-    estado_sofia: Optional[EstadoSofia] = None
     estado: Optional[EstadoProceso] = None
     observaciones: Optional[str] = Field(None, max_length=1000)
 
@@ -126,20 +119,19 @@ class EvaluacionFinalOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    estado: EstadoProceso
     estado_sofia: EstadoSofia
     nota_empresa: Optional[float] = None
     nota_instructor: Optional[float] = None
+    estado: EstadoProceso
     observaciones: Optional[str] = None
-    updated_at: datetime
 
 
 # ================== Novedades de Proceso ==================
 class NovedadProcesoBase(BaseModel):
     tipo_novedad: TipoNovedad
-    fecha_novedad: date
+    fecha_novedad: Optional[date] = None          # Opcional → backend pone hoy si no viene
     descripcion: str = Field(..., min_length=5, max_length=2000)
-    documento_soporte_url: Optional[str] = Field(None, max_length=500)
+    documento_soporte_url: Optional[str] = None
 
 
 class NovedadProcesoCreate(NovedadProcesoBase):
@@ -150,7 +142,7 @@ class NovedadProcesoUpdate(BaseModel):
     tipo_novedad: Optional[TipoNovedad] = None
     fecha_novedad: Optional[date] = None
     descripcion: Optional[str] = Field(None, min_length=5, max_length=2000)
-    documento_soporte_url: Optional[str] = Field(None, max_length=500)
+    documento_soporte_url: Optional[str] = None
     is_active: Optional[bool] = None
 
 
@@ -161,12 +153,11 @@ class NovedadProcesoOut(NovedadProcesoBase):
     proceso_id: int
     is_active: bool
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
 
-
-# ================== Avance del Proceso ==================
+    # ================== Avance de Proceso ==================
 class ProcesoAvance(BaseModel):
     proceso_id: int
     avance: float
     momentos_completados: int
-    total_momentos: int = 3
+    total_momentos: int

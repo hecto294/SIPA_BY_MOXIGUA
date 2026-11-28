@@ -42,20 +42,9 @@ def leer_archivo(file_bytes: bytes, filename: str) -> List[Dict[str, Any]]:
     Lee un archivo CSV o Excel y lo convierte en una lista de diccionarios.
     """
     if filename.lower().endswith(".csv"):
-        try:
-            content = file_bytes.decode("utf-8-sig")
-        except UnicodeDecodeError:
-            content = file_bytes.decode("latin-1")
-        # Excel en español suele guardar el CSV separado por ';'
-        primera = content.splitlines()[0] if content.splitlines() else ""
-        delimitador = ";" if primera.count(";") > primera.count(",") else ","
-        reader = csv.DictReader(io.StringIO(content), delimiter=delimitador)
-        filas = []
-        for row in reader:
-            limpia = {str(k).strip().lower(): (v.strip() if isinstance(v, str) else v)
-                      for k, v in row.items() if k is not None}
-            filas.append(limpia)
-        return filas
+        content = file_bytes.decode("utf-8")
+        reader = csv.DictReader(io.StringIO(content))
+        return [row for row in reader]
 
     elif filename.lower().endswith((".xlsx", ".xls")):
         wb = load_workbook(io.BytesIO(file_bytes), read_only=True)
@@ -64,7 +53,7 @@ def leer_archivo(file_bytes: bytes, filename: str) -> List[Dict[str, Any]]:
         if not rows:
             return []
 
-        headers = [str(h).strip().lower() if h else "" for h in rows[0]]
+        headers = [str(h) if h else "" for h in rows[0]]
         result = []
         for row in rows[1:]:
             if all(cell is None or cell == "" for cell in row):
@@ -472,11 +461,10 @@ def _crear_instancia_validada(db: Session, tipo: str, datos: Dict[str, Any]):
         if not db.query(Rol).filter(Rol.id == rol_id, Rol.is_active == True).first():
             raise ValueError(f"Rol ID {rol_id} no existe o está inactivo")
 
-        condicion = (Usuario.email == datos["email"])
-        # Solo se compara el documento si viene en el archivo (None coincidiría con todos los que no lo tienen)
-        if datos.get("documento_identidad"):
-            condicion = condicion | (Usuario.documento_identidad == datos["documento_identidad"])
-        if db.query(Usuario).filter(condicion).first():
+        if db.query(Usuario).filter(
+            (Usuario.email == datos["email"]) |
+            (Usuario.documento_identidad == datos.get("documento_identidad"))
+        ).first():
             raise ValueError("Email o documento ya registrado")
 
         return Usuario(**datos)

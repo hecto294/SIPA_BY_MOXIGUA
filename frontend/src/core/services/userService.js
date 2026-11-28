@@ -86,8 +86,13 @@ export const userService = {
   },
 
   bulkUploadUsers: async (file) => {
-    const { importacionService } = await import('./importacionService');
-    return await importacionService.importar('usuarios', file);
+    const formData = new FormData();
+    formData.append('file', file);
+    return await apiClient.post(
+      API_ENDPOINTS.IMPORTACION.IMPORTAR('usuarios'),
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
   },
 
   // ============ ESTADÍSTICAS Y BÚSQUEDA ============

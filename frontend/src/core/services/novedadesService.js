@@ -19,6 +19,19 @@ export const novedadesService = {
   obtenerDetalle: async (novedadId) => {
     return await apiClient.get(`/novedades/${novedadId}`);
   },
+
+  /**
+   * Crea una novedad en un proceso.
+   * tipo_novedad: RENUNCIA | INCAPACIDAD | CAMBIO_EMPRESA | PRORROGA | OTRO
+   * fecha_novedad: opcional (si no se envía, el backend pone la fecha de hoy)
+   */
+  crear: async (procesoId, data) => {
+    return await apiClient.post(`/procesos/${procesoId}/novedades`, data);
+  },
+
+  listarPorProceso: async (procesoId) => {
+    return await apiClient.get(`/procesos/${procesoId}/novedades`);
+  },
 };
 
 export default novedadesService;

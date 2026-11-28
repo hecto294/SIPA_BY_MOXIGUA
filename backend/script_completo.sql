@@ -204,10 +204,6 @@ CREATE TABLE procesos_etapa_productiva (
     nota_empresa NUMERIC(3,1) CHECK (nota_empresa BETWEEN 0 AND 10),
     nota_instructor NUMERIC(3,1) CHECK (nota_instructor BETWEEN 0 AND 10),
     observaciones TEXT,
-    raps_pendientes INTEGER,
-    porcentaje_raps NUMERIC(5,2),
-    fecha_inicio_contrato DATE,
-    fecha_fin_contrato DATE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -390,6 +386,7 @@ CREATE TABLE notificaciones_mensajes (
 -- ============================================================
 CREATE INDEX idx_usuario_roles_rol ON usuario_roles(rol_id);
 CREATE INDEX idx_usuarios_email_active ON usuarios(email) WHERE is_active;
+CREATE UNIQUE INDEX uq_usuarios_email_lower ON usuarios (LOWER(email));
 CREATE INDEX idx_usuarios_rol_id ON usuarios(rol_id);
 CREATE INDEX idx_usuarios_reset_code ON usuarios(reset_code) WHERE reset_code IS NOT NULL;
 CREATE INDEX idx_fichas_programa ON fichas(programa_id);

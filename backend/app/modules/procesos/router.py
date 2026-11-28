@@ -28,7 +28,7 @@ router = APIRouter(prefix="/procesos", tags=["procesos", "checklist"])
 def crear_proceso(
     proceso: schemas.ProcesoCreate,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(Roles.ADMIN, Roles.COORDINADOR))
+    current_user: Usuario = Depends(require_role(Roles.ADMIN, Roles.COORDINADOR, Roles.INSTRUCTOR))
 ):
     aprendiz = db.query(Usuario).filter(
         Usuario.id == proceso.aprendiz_id,
@@ -404,18 +404,36 @@ def crear_novedad(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
+    """
+    Crea una novedad para un proceso.
+    - tipo_novedad: RENUNCIA | INCAPACIDAD | CAMBIO_EMPRESA | PRORROGA | OTRO
+    - fecha_novedad: si no se envía, se usa la fecha de hoy
+    """
     proceso = crud.get_proceso(db, proceso_id)
     if not proceso:
         raise HTTPException(status_code=404, detail="Proceso no encontrado")
 
-    if current_user.rol_id == Roles.INSTRUCTOR and proceso.instructor_id != current_user.id:
-        raise HTTPException(status_code=403, detail="No es el instructor asignado a este proceso")
-    elif current_user.rol_id not in [Roles.ADMIN, Roles.COORDINADOR, Roles.INSTRUCTOR]:
+    # Permisos
+    if current_user.rol_id == Roles.INSTRUCTOR:
+        if proceso.instructor_id != current_user.id:
+            raise HTTPException(
+                status_code=403,
+                detail="Solo puedes registrar novedades en los procesos que tienes asignados"
+            )
+    elif current_user.rol_id == Roles.APRENDIZ:
+        if proceso.aprendiz_id != current_user.id:
+            raise HTTPException(status_code=403, detail="No autorizado")
+    elif current_user.rol_id not in (Roles.ADMIN, Roles.COORDINADOR):
         raise HTTPException(status_code=403, detail="No autorizado para crear novedades")
 
     data = novedad.model_dump()
     data["proceso_id"] = proceso_id
     data["is_active"] = True
+
+    # Fecha por defecto = hoy
+    if not data.get("fecha_novedad"):
+        data["fecha_novedad"] = date.today()
+
     return crud.create_novedad(db, data)
 
 

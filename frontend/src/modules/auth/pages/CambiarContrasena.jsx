@@ -4,6 +4,16 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '@/core/services/authService';
 import './RecuperarContrasena.css';
 
+// Misma política que el backend (validar_fortaleza_password)
+const validarPassword = (p) => {
+  if (p.length < 8) return 'La contraseña debe tener al menos 8 caracteres';
+  if (!/[A-Z]/.test(p)) return 'La contraseña debe tener al menos una mayúscula';
+  if (!/[a-z]/.test(p)) return 'La contraseña debe tener al menos una minúscula';
+  if (!/\d/.test(p)) return 'La contraseña debe tener al menos un número';
+  if (!/[!@#$%^&*(),.?":{}|<>_-]/.test(p)) return 'La contraseña debe tener al menos un carácter especial';
+  return '';
+};
+
 const CambiarContrasena = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -28,8 +38,9 @@ const CambiarContrasena = () => {
     setSuccess('');
 
     // Validaciones
-    if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+    const errorPassword = validarPassword(password);
+    if (errorPassword) {
+      setError(errorPassword);
       return;
     }
 

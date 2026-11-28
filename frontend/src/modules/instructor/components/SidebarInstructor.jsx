@@ -53,6 +53,12 @@ const SidebarInstructor = ({ setActivePage }) => {
           <li className={activeItem === 'empresas' ? 'active' : ''} onClick={() => handleNavigation('empresas', '/instructor/empresas')}>
             <i className="fas fa-building"></i> Empresas
           </li>
+          <li
+  className={activeItem === 'novedades' ? 'active' : ''}
+  onClick={() => handleNavigation('novedades', '/instructor/novedades')}
+>
+  <i className="fas fa-bullhorn"></i> Novedades
+</li>
 
           <li className={activeItem === 'charlas' ? 'active' : ''} onClick={() => toggleSubmenu('charlas', '/instructor/charlas-programadas')}>
             <i className="fas fa-comments"></i> Charlas

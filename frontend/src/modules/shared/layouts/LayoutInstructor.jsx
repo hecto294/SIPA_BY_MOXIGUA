@@ -5,7 +5,7 @@ import Header from '@/modules/shared/components/Header';
 import SidebarInstructor from '@/modules/instructor/components/SidebarInstructor';
 import '@/App.css';
 
-// PÃ¡ginas
+// Páginas
 import DashboardInstructor from '@/modules/instructor/pages/DashboardInstructor';
 import Calendario from '@/modules/instructor/pages/Calendario';
 import MiPerfil from '@/modules/instructor/pages/MiPerfil';
@@ -17,6 +17,7 @@ import DetalleAprendizBitacoras from '@/modules/instructor/pages/DetalleAprendiz
 import BitacorasPorBimestre from '@/modules/instructor/pages/BitacorasPorBimestre';
 import EditarCharla from '@/modules/instructor/pages/EditarCharla';
 import DetalleCharla from '@/modules/instructor/pages/DetalleCharla';
+import NovedadesInstructor from '@/modules/instructor/pages/NovedadesInstructor';
 import HistorialAlertas from '@/shared/components/HistorialAlertas';
 
 // Componentes
@@ -37,7 +38,7 @@ const LayoutInstructor = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ðŸ”¥ Leer usuario real del localStorage
+  // 🔥 Leer usuario real del localStorage
   useEffect(() => {
     try {
       const stored = localStorage.getItem('user');
@@ -111,6 +112,7 @@ const LayoutInstructor = () => {
               <Route path="/reportes-finales" element={<ReportesFinales />} />
               <Route path="/empresas" element={<Empresas />} />
               <Route path="/aprendices" element={<Aprendices />} />
+              <Route path="/novedades" element={<NovedadesInstructor />} />
               <Route path="/bitacora/aprendiz/:aprendizId" element={<DetalleAprendizBitacoras />} />
               <Route path="/bitacora/aprendiz/:aprendizId/bimestre/:bimestre" element={<BitacorasPorBimestre />} />
               <Route path="/historial-alertas" element={<HistorialAlertas rutaVolver="/instructor" />} />

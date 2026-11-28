@@ -1,7 +1,9 @@
-﻿from datetime import datetime
+from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+from app.modules.usuarios.schemas import validar_fortaleza_password
 
 
 # ============================================================
@@ -97,7 +99,12 @@ class VerifyCodeRequest(BaseModel):
 class PasswordResetConfirm(BaseModel):
     email: EmailStr
     codigo: str = Field(..., min_length=6, max_length=6)
-    nueva_password: str = Field(..., min_length=6)
+    nueva_password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("nueva_password")
+    @classmethod
+    def _password_fuerte(cls, v):
+        return validar_fortaleza_password(v)
 
 
 LoginResponse.model_rebuild()

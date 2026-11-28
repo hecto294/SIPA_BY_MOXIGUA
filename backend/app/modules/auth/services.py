@@ -97,3 +97,21 @@ def send_password_reset_email(to_email: str, reset_link: str) -> None:
     </html>
     """
     send_email(to_email, subject, body_html)
+
+
+def send_password_reset_code_email(to_email: str, codigo: str) -> None:
+    """Envía el código de 6 dígitos de recuperación (vence en pocos minutos)."""
+    minutos = settings.PASSWORD_RESET_CODE_EXPIRE_MINUTES
+    subject = "Código de recuperación de contraseña - SIPA"
+    body_html = f"""
+    <html>
+        <body>
+            <p>Hemos recibido una solicitud para restablecer tu contraseña.</p>
+            <p>Tu código de verificación es:</p>
+            <p style="font-size:28px;font-weight:bold;letter-spacing:6px;">{codigo}</p>
+            <p>Este código vence en {minutos} minutos y solo puede usarse una vez.</p>
+            <p>Si no solicitaste este cambio, ignora este correo.</p>
+        </body>
+    </html>
+    """
+    send_email(to_email, subject, body_html)

@@ -31,6 +31,16 @@ export const bitacoraService = {
     return await apiClient.put(API_ENDPOINTS.BITACORAS.UPDATE(id), data);
   },
 
+  /**
+   * Envía la bitácora al instructor (BORRADOR / CON_OBSERVACIONES → ENVIADA)
+   */
+  enviarBitacora: async (id) => {
+    return await apiClient.post(`/bitacoras/${id}/enviar`);
+  },
+
+  /**
+   * Elimina una bitácora (solo BORRADOR, solo el aprendiz dueño)
+   */
   deleteBitacora: async (id) => {
     return await apiClient.delete(API_ENDPOINTS.BITACORAS.DELETE(id));
   },
@@ -60,3 +70,5 @@ export const bitacoraService = {
     window.URL.revokeObjectURL(url);
   },
 };
+
+export default bitacoraService;

@@ -126,21 +126,16 @@ class UsuarioOut(BaseModel):
     id: int
     nombre: str
     apellido: str
-    email: str  # solo salida: no se rechaza la lista completa por un correo atípico
+    email: EmailStr
     tipo_documento: Optional[str] = None
     documento_identidad: Optional[str] = None
     telefono: Optional[str] = None
     avatar_url: Optional[str] = None  # 🔥 NUEVO
     rol_id: int
     is_active: bool
-    preferencias_ui: Optional[dict] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-
-    @field_validator("preferencias_ui", mode="before")
-    @classmethod
-    def _preferencias_por_defecto(cls, v):
-        return v if isinstance(v, dict) else {}
+    preferencias_ui: dict = {}
+    created_at: datetime
+    updated_at: datetime
 
 
 class UsuarioConRol(UsuarioOut):
@@ -171,17 +166,31 @@ class UsuarioListResponse(BaseModel):
 class ErrorFilaBulk(BaseModel):
     fila: int
     error: str
-    data: dict
+    data: dict = {}
+
+
+class AdvertenciaFilaBulk(BaseModel):
+    fila: int
+    advertencia: str
+    email: Optional[str] = None
 
 
 class ResultadoBulkUpload(BaseModel):
     total: int
     exitosos: int
     fallidos: int
+    advertencias: int = 0
     errores: List[ErrorFilaBulk] = []
+    detalle_advertencias: List[AdvertenciaFilaBulk] = []
 
 
 class BulkUploadResponse(BaseModel):
     message: str
     filename: str
     resultados: ResultadoBulkUpload
+    filas_insertadas: Optional[int] = None
+    filas_con_advertencia: Optional[int] = None
+    filas_rechazadas: Optional[int] = None
+    detalle_advertencias: Optional[List] = None
+    detalle_rechazadas: Optional[List] = None
+    total_filas: Optional[int] = None

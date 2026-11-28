@@ -1,4 +1,4 @@
-// src/modules/shared/layouts/LayoutCoordinador.jsx
+﻿// src/modules/shared/layouts/LayoutCoordinador.jsx
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/modules/shared/components/Header';
@@ -41,6 +41,9 @@ import CentrosFormacion from "@/modules/coordinador/pages/CentrosFormacion";
 import Soportes from "@/modules/shared/pages/Novedades";
 import HistorialAlertas from '@/shared/components/HistorialAlertas';
 
+// 🔥 Crear proceso de aprendiz (tarea 6)
+import CrearProceso from "@/modules/coordinador/pages/CrearProceso";
+
 const LayoutCoordinador = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -65,6 +68,7 @@ const LayoutCoordinador = () => {
 
   let activePage = 'dashboard';
   if (location.pathname.includes('/parametrizacion')) activePage = 'parametrizacion';
+  else if (location.pathname.includes('/procesos/nuevo')) activePage = 'crear-proceso';
   else if (location.pathname.includes('/fichas')) activePage = 'fichas';
   else if (location.pathname.includes('/cartas-presentacion')) activePage = 'cartas-presentacion';
   else if (location.pathname.includes('/reportes')) activePage = 'reportes';
@@ -73,6 +77,7 @@ const LayoutCoordinador = () => {
   else if (location.pathname.includes('/centros-formacion')) activePage = 'centros-formacion';
   else if (location.pathname.includes('/soportes')) activePage = 'soportes';
   else if (location.pathname.includes('/modalidades')) activePage = 'modalidades'; // 🔥 NUEVO
+  else if (location.pathname.includes('/certificados')) activePage = 'certificados';
   else if (location.pathname.includes('/empresas')) activePage = 'empresas';
   else if (location.pathname.includes('/aprendices')) activePage = 'aprendices';
   else if (location.pathname.includes('/instructores')) activePage = 'instructores';
@@ -120,8 +125,13 @@ const LayoutCoordinador = () => {
             <Route path="/programas" element={<ProgramasFormacion />} />
             <Route path="/aprendices-ficha/:idFicha" element={<AprendicesFicha />} />
 
-            {/* 🔥 Ruta de Soportes (NUEVO) */}
+            {/* 🔥 Crear proceso de aprendiz */}
+            <Route path="/procesos/nuevo" element={<CrearProceso />} />
+
+            {/* 🔥 Historial de alertas */}
             <Route path="/historial-alertas" element={<HistorialAlertas rutaVolver="/coordinador" />} />
+
+            {/* 🔥 Ruta de Soportes */}
             <Route path="/soportes" element={<Soportes />} />
             <Route path="/modalidades" element={<GestionModalidades />} />
           </Routes>

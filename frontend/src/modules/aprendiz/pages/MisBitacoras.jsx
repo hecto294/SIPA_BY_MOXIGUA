@@ -55,6 +55,10 @@ const MisBitacoras = () => {
     doc.save(nombreArchivo || `${titulo}.pdf`);
   };
 
+  // Helpers para pasar texto seguro dentro de atributos onclick
+  const enc = (v) => encodeURIComponent(v ?? '');
+  const dec = (v) => decodeURIComponent(v ?? '');
+
   // ==========================================================
   // 📅 ESTADO
   // ==========================================================
@@ -70,6 +74,7 @@ const MisBitacoras = () => {
   // ==========================================================
   useEffect(() => {
     cargarBitacoras();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ==========================================================
@@ -95,10 +100,13 @@ const MisBitacoras = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoy]);
 
-  const cargarBitacoras = async () => {
+  // silencioso = true -> recarga sin mostrar pantalla de "Cargando" ni error a pantalla completa
+  const cargarBitacoras = async (silencioso = false) => {
     try {
-      setLoading(true);
-      setError(null);
+      if (!silencioso) {
+        setLoading(true);
+        setError(null);
+      }
 
       const userStr = localStorage.getItem('user');
       if (!userStr) throw new Error('Usuario no autenticado');
@@ -111,9 +119,9 @@ const MisBitacoras = () => {
       setBimestres(bimestresAgrupados);
     } catch (err) {
       console.error('Error al cargar bitácoras:', err);
-      setError(err.message || 'Error al cargar las bitácoras');
+      if (!silencioso) setError(err.message || 'Error al cargar las bitácoras');
     } finally {
-      setLoading(false);
+      if (!silencioso) setLoading(false);
     }
   };
 
@@ -122,16 +130,15 @@ const MisBitacoras = () => {
   //   1er Bimestre: ene - abr
   //   2do Bimestre: may - sep
   //   3er Bimestre: oct - dic
-  // Usa el estado "hoy" para recalcular en tiempo real
   // ==========================================================
   const calcularEstadoBimestre = (numBimestre) => {
     const fechaActual = hoy;
     const anio = fechaActual.getFullYear();
 
     const RANGOS = {
-      1: { inicio: new Date(anio, 0, 1),  fin: new Date(anio, 3, 30, 23, 59, 59) }, // ene-abr
-      2: { inicio: new Date(anio, 4, 1),  fin: new Date(anio, 8, 30, 23, 59, 59) }, // may-sep
-      3: { inicio: new Date(anio, 9, 1),  fin: new Date(anio, 11, 31, 23, 59, 59) }, // oct-dic
+      1: { inicio: new Date(anio, 0, 1),  fin: new Date(anio, 3, 30, 23, 59, 59) },
+      2: { inicio: new Date(anio, 4, 1),  fin: new Date(anio, 8, 30, 23, 59, 59) },
+      3: { inicio: new Date(anio, 9, 1),  fin: new Date(anio, 11, 31, 23, 59, 59) },
     };
 
     const rango = RANGOS[numBimestre];
@@ -162,12 +169,11 @@ const MisBitacoras = () => {
         ? Math.round((aprobadas / semanas.length) * 100)
         : 0;
 
-      // 🔥 Fechas del bimestre según CALENDARIO SENA (no de las bitácoras)
       const anioActual = new Date().getFullYear();
       const RANGOS_FECHAS = {
-        1: { inicio: new Date(anioActual, 0, 1),  fin: new Date(anioActual, 3, 30) },  // ene-abr
-        2: { inicio: new Date(anioActual, 4, 1),  fin: new Date(anioActual, 8, 30) },  // may-sep
-        3: { inicio: new Date(anioActual, 9, 1),  fin: new Date(anioActual, 11, 31) }, // oct-dic
+        1: { inicio: new Date(anioActual, 0, 1),  fin: new Date(anioActual, 3, 30) },
+        2: { inicio: new Date(anioActual, 4, 1),  fin: new Date(anioActual, 8, 30) },
+        3: { inicio: new Date(anioActual, 9, 1),  fin: new Date(anioActual, 11, 31) },
       };
 
       const rangoFechas = RANGOS_FECHAS[numBimestre];
@@ -193,6 +199,7 @@ const MisBitacoras = () => {
       ENVIADA: 'Pendiente de revisión',
       APROBADA: 'Aprobada',
       CON_OBSERVACION: 'Requiere corrección',
+      CON_OBSERVACIONES: 'Requiere corrección',
     };
 
     return {
@@ -200,12 +207,13 @@ const MisBitacoras = () => {
       nombre: `Semana ${b.numero_bitacora}`,
       fecha: b.fecha_envio ? formatearFecha(new Date(b.fecha_envio)) : '—',
       estado: mapEstado[b.estado] || 'Pendiente de revisión',
+      estadoRaw: b.estado,
       descripcion: b.titulo || b.contenido || 'Sin descripción',
       observacion: b.instructor_retroalimentacion || null,
       evidencias: (b.archivos || []).map(a => ({
         id: a.id,
         nombre: a.nombre,
-        titulo: b.titulo,
+        titulo: b.titulo || `Semana ${b.numero_bitacora}`,
         contenido: b.contenido || '',
         fecha: b.fecha_envio ? formatearFecha(new Date(b.fecha_envio)) : '',
         url: a.ruta_objeto,
@@ -356,6 +364,7 @@ const MisBitacoras = () => {
           nombre: semana,
           fecha: fechaFormateada,
           estado: 'Pendiente de revisión',
+          estadoRaw: 'ENVIADA',
           descripcion: descripcion,
           observacion: null,
           evidencias: evidencias,
@@ -400,6 +409,154 @@ const MisBitacoras = () => {
         });
       }
     });
+  };
+
+  // ==========================================================
+  // ENVIAR BITÁCORA AL INSTRUCTOR
+  // ==========================================================
+  const handleEnviarBitacora = async (bitacoraId, nombreSemana = 'Bitácora') => {
+    const confirm = await Swal.fire({
+      title: '¿Enviar bitácora al instructor?',
+      html: `
+        <div style="text-align:left; padding:8px 0;">
+          <p style="margin:0 0 8px 0; color:#374151;">
+            Vas a enviar <strong>"${nombreSemana}"</strong> al instructor para su revisión.
+          </p>
+          <p style="margin:0; font-size:13px; color:#6b7280;">
+            Después de enviarla no podrás editarla hasta que el instructor la revise.
+          </p>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, enviar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#3ca203',
+      cancelButtonColor: '#6b7280',
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      Swal.fire({
+        title: 'Enviando...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      await bitacoraService.enviarBitacora(bitacoraId);
+
+      // Actualizar estado local
+      setBimestres((prev) =>
+        prev.map((b) => ({
+          ...b,
+          semanas: (b.semanas || []).map((s) =>
+            s.id === bitacoraId || s.bitacora_id === bitacoraId
+              ? { ...s, estado: 'Pendiente de revisión', estadoRaw: 'ENVIADA', observacion: null }
+              : s
+          ),
+        }))
+      );
+
+      await Swal.fire({
+        title: '¡Bitácora enviada!',
+        html: `
+          <div style="text-align:left; padding:8px 0;">
+            <p style="margin:0 0 6px 0;">
+              <strong>"${nombreSemana}"</strong> fue enviada al instructor.
+            </p>
+            <p style="margin:0; font-size:13px; color:#6b7280;">
+              Estado actual: <strong>Pendiente de revisión</strong>
+            </p>
+          </div>
+        `,
+        icon: 'success',
+        confirmButtonColor: '#3ca203',
+        timer: 2500,
+        timerProgressBar: true,
+      });
+
+      // Sincronizar con el backend (sin pantalla de carga)
+      await cargarBitacoras(true);
+    } catch (err) {
+      console.error('Error al enviar bitácora:', err);
+      Swal.fire({
+        title: 'No se pudo enviar',
+        text: err.message || 'Ocurrió un error al enviar la bitácora.',
+        icon: 'error',
+        confirmButtonColor: '#dc2626',
+      });
+    }
+  };
+
+  // ==========================================================
+  // ELIMINAR BITÁCORA (solo BORRADOR)
+  // ==========================================================
+  const handleEliminarBitacora = async (bitacoraId, nombreSemana = 'Bitácora') => {
+    const confirm = await Swal.fire({
+      title: '¿Eliminar bitácora?',
+      html: `
+        <div style="text-align:left; padding:8px 0;">
+          <p style="margin:0 0 8px 0; color:#374151;">
+            Vas a eliminar <strong>"${nombreSemana}"</strong>.
+          </p>
+          <p style="margin:0; font-size:13px; color:#6b7280;">
+            Solo se pueden eliminar bitácoras en estado <strong>Borrador</strong>.
+            Esta acción no se puede deshacer.
+          </p>
+        </div>
+      `,
+      icon: 'warning',
+      iconColor: '#dc2626',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      Swal.fire({
+        title: 'Eliminando...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      await bitacoraService.deleteBitacora(bitacoraId);
+
+      // Quitar del estado local
+      setBimestres((prev) =>
+        prev.map((b) => ({
+          ...b,
+          semanas: (b.semanas || []).filter(
+            (s) => s.id !== bitacoraId && s.bitacora_id !== bitacoraId
+          ),
+        }))
+      );
+
+      await Swal.fire({
+        title: 'Bitácora eliminada',
+        text: `"${nombreSemana}" fue eliminada correctamente.`,
+        icon: 'success',
+        confirmButtonColor: '#3ca203',
+        timer: 2200,
+        timerProgressBar: true,
+      });
+
+      await cargarBitacoras(true);
+    } catch (err) {
+      console.error('Error al eliminar bitácora:', err);
+      Swal.fire({
+        title: 'No se pudo eliminar',
+        text:
+          err.message ||
+          'Solo se pueden eliminar bitácoras en estado Borrador, o no tienes permiso.',
+        icon: 'error',
+        confirmButtonColor: '#dc2626',
+      });
+    }
   };
 
   // ==========================================================
@@ -507,6 +664,7 @@ const MisBitacoras = () => {
                     ...s,
                     descripcion: descripcion,
                     estado: 'Pendiente de revisión',
+                    estadoRaw: 'ENVIADA',
                     observacion: null,
                     evidencias: nuevasEvidencias,
                   };
@@ -552,6 +710,15 @@ const MisBitacoras = () => {
   // ==========================================================
   // VER DETALLES
   // ==========================================================
+  const esBorrador = (s) =>
+    s.estado === 'Borrador' || s.estadoRaw === 'BORRADOR';
+
+  const puedeEnviar = (s) =>
+    esBorrador(s) ||
+    s.estado === 'Requiere corrección' ||
+    s.estadoRaw === 'CON_OBSERVACION' ||
+    s.estadoRaw === 'CON_OBSERVACIONES';
+
   const handleVerDetalles = (bimestre) => {
     if (bimestre.estado !== 'En proceso') {
       Swal.fire({
@@ -598,7 +765,7 @@ const MisBitacoras = () => {
                 <i class="fas fa-file-pdf" style="color: #dc2626; font-size: 14px;"></i>
                 <span style="font-size: 12px; color: #6b7280;">${ev.nombre}</span>
                 <button 
-                  onclick="window.verPDFSimulado('${ev.titulo}', '${(ev.contenido || '').replace(/'/g, "\\'")}', '${ev.fecha}')"
+                  onclick="window.verPDFSimulado('${enc(ev.titulo)}', '${enc(ev.contenido)}', '${enc(ev.fecha)}')"
                   style="background: #3ca203; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;"
                 >
                   <i class="fas fa-eye"></i> Ver
@@ -613,17 +780,40 @@ const MisBitacoras = () => {
             `).join('')}
           </div>
         ` : ''}
-        ${semana.estado === 'Requiere corrección' ? `
-          <button 
-            onclick="window.reenviarBitacora(${semana.id}, ${bimestre.id})"
-            style="margin-top: 8px; background: #f59e0b; color: white; border: none; padding: 4px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;"
-          >
-            <i class="fas fa-undo-alt"></i> Reenviar con corrección
-          </button>
-        ` : ''}
+
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+          ${semana.estado === 'Requiere corrección' ? `
+            <button 
+              onclick="window.reenviarBitacora(${semana.id}, ${bimestre.id})"
+              style="background: #f59e0b; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;"
+            >
+              <i class="fas fa-undo-alt"></i> Reenviar con corrección
+            </button>
+          ` : ''}
+
+          ${puedeEnviar(semana) ? `
+            <button 
+              onclick="window.enviarBitacora(${semana.id}, '${enc(semana.nombre)}')"
+              style="background: #3ca203; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;"
+            >
+              <i class="fas fa-paper-plane"></i> Enviar
+            </button>
+          ` : ''}
+
+          ${esBorrador(semana) ? `
+            <button 
+              onclick="window.eliminarBitacora(${semana.id}, '${enc(semana.nombre)}')"
+              title="Eliminar bitácora (solo borrador)"
+              style="background: #fee2e2; color: #dc2626; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;"
+            >
+              <i class="fas fa-trash"></i> Eliminar
+            </button>
+          ` : ''}
+        </div>
       </div>
     `).join('');
 
+    // ---- Handlers globales usados por el HTML del modal ----
     window.reenviarBitacora = (semanaId, bimestreId) => {
       const b = bimestres.find(x => x.id === bimestreId);
       if (b) {
@@ -632,12 +822,20 @@ const MisBitacoras = () => {
       }
     };
 
+    window.enviarBitacora = (id, nombre) => {
+      handleEnviarBitacora(id, dec(nombre));
+    };
+
+    window.eliminarBitacora = (id, nombre) => {
+      handleEliminarBitacora(id, dec(nombre));
+    };
+
     window.verPDFSimulado = (titulo, contenido, fecha) => {
-      verPDFSimulado(titulo, contenido, fecha);
+      verPDFSimulado(dec(titulo), dec(contenido), dec(fecha));
     };
 
     window.descargarPDFSimulado = (titulo, contenido, fecha, nombreArchivo) => {
-      descargarPDFSimulado(titulo, contenido, fecha, nombreArchivo);
+      descargarPDFSimulado(dec(titulo), dec(contenido), dec(fecha), dec(nombreArchivo));
     };
 
     window.descargarEvidenciaReal = async (id, nombre, titulo, contenido, fecha) => {
@@ -715,6 +913,7 @@ const MisBitacoras = () => {
   const aprobadas = (semanas) => semanas.filter(s => s.estado === 'Aprobada').length;
   const pendientes = (semanas) => semanas.filter(s => s.estado === 'Pendiente de revisión').length;
   const correcciones = (semanas) => semanas.filter(s => s.estado === 'Requiere corrección').length;
+  const borradores = (semanas) => semanas.filter(s => s.estado === 'Borrador').length;
 
   // ==========================================================
   // RENDER: LOADING / ERROR
@@ -738,7 +937,7 @@ const MisBitacoras = () => {
           <h3 style={{ color: '#dc2626' }}>Error</h3>
           <p style={{ color: '#6b7280' }}>{error}</p>
           <button
-            onClick={cargarBitacoras}
+            onClick={() => cargarBitacoras()}
             style={{ background: '#3ca203', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', marginTop: '15px' }}
           >
             Reintentar
@@ -757,7 +956,7 @@ const MisBitacoras = () => {
         <ol>
           <li>
             <button 
-              onClick={() => window.location.href = '/aprendiz'}
+              onClick={() => navigate('/aprendiz')}
               className="breadcrumb-link"
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 'inherit' }}
             >
@@ -793,6 +992,7 @@ const MisBitacoras = () => {
           const aprobadasCount = aprobadas(bimestre.semanas);
           const pendientesCount = pendientes(bimestre.semanas);
           const correccionesCount = correcciones(bimestre.semanas);
+          const borradoresCount = borradores(bimestre.semanas);
           const color = getColorEstadoBimestre(estadoCalculado);
 
           const esActivo = estadoCalculado === 'En proceso';
@@ -853,6 +1053,9 @@ const MisBitacoras = () => {
                       </span>
                       <span className="stat-item" style={{ color: '#ef4444' }}>
                         <i className="fas fa-exclamation-circle"></i> {correccionesCount} con corrección
+                      </span>
+                      <span className="stat-item" style={{ color: '#6b7280' }}>
+                        <i className="fas fa-pencil-alt"></i> {borradoresCount} borradores
                       </span>
                       <span className="stat-item" style={{ color: '#6b7280' }}>
                         <i className="fas fa-book"></i> {total} total

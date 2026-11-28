@@ -231,6 +231,7 @@ def bulk_create_usuarios(db: Session, file_content: bytes, filename: str) -> dic
     exitosos = 0
     fallidos = 0
     errores = []
+    detalle_advertencias = []
 
     for idx, row in df.iterrows():
         fila_num = int(idx) + 2
@@ -306,6 +307,20 @@ def bulk_create_usuarios(db: Session, file_content: bytes, filename: str) -> dic
                 is_active=True,
             )
 
+            # Advertencia si faltan campos opcionales recomendados
+            if not documento:
+                detalle_advertencias.append({
+                    "fila": fila_num,
+                    "advertencia": "Sin documento_identidad",
+                    "email": email,
+                })
+            if not telefono:
+                detalle_advertencias.append({
+                    "fila": fila_num,
+                    "advertencia": "Sin teléfono",
+                    "email": email,
+                })
+
             # --- SAVEPOINT ---
             nested = db.begin_nested()
             try:
@@ -341,7 +356,9 @@ def bulk_create_usuarios(db: Session, file_content: bytes, filename: str) -> dic
         "total": total,
         "exitosos": exitosos,
         "fallidos": fallidos,
+        "advertencias": len(detalle_advertencias),
         "errores": errores,
+        "detalle_advertencias": detalle_advertencias,
     }
 
 

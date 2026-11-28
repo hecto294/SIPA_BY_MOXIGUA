@@ -93,7 +93,7 @@ const InstructoresGlobales = () => {
               <strong>Selecciona un archivo Excel (.xlsx) o CSV</strong>
             </p>
             <p style="font-size: 12px; color: #9ca3af; margin: 5px 0 0 0;">
-              Columnas: <strong>nombre, apellido, email, contraseña</strong> (mínimo 8 caracteres)
+              Columnas: <strong>nombre, apellido, email, contraseña</strong>
             </p>
           </div>
           <div style="margin: 15px 0;">
@@ -218,21 +218,6 @@ const InstructoresGlobales = () => {
           }}
         >
           <i className="fas fa-redo" /> Reintentar
-        </button>
-        <button
-          onClick={handleCargaMasiva}
-          style={{
-            background: '#3ca203',
-            color: 'white',
-            border: 'none',
-            padding: '10px 20px',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            marginTop: '15px',
-            marginLeft: '10px',
-          }}
-        >
-          <i className="fas fa-upload" /> Carga Masiva
         </button>
       </div>
     );
